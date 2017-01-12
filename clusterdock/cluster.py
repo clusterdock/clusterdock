@@ -196,6 +196,7 @@ class Node(object):
 
         # Optional arguments are relegated to the kwargs dictionary, in part to keep Pylint happy.
         self.command = kwargs.get('command')
+        self.devices = kwargs.get('devices')
         self.ports = kwargs.get('ports')
         # /etc/localtime is always volume mounted so that containers have the same timezone as their
         # host machines.
@@ -224,8 +225,9 @@ class Node(object):
         # privileged mode (see KITCHEN-10073). We also disable the default seccomp profile (see #3)
         # and pass in the volumes list at this point.
         host_configs['cap_add'] = ['ALL']
-        host_configs['security_opt'] = ['seccomp:unconfined']
+        host_configs['devices'] = self.devices
         host_configs['publish_all_ports'] = True
+        host_configs['security_opt'] = ['seccomp:unconfined']
 
         if self.volumes:
             host_configs['binds'] = self._get_binds()
