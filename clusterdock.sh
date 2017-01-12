@@ -40,17 +40,7 @@ clusterdock_run() {
   # - CLUSTERDOCK_TOPOLOGY_IMAGE: a Docker image to mount into clusterdock's topology folder and
   #                               make available to users
 
-  if [ -z "${CLUSTERDOCK_IMAGE}" ]; then
-    local CONSTANTS_CONFIG_URL='https://raw.githubusercontent.com/cloudera/clusterdock/master/clusterdock/constants.cfg'
-
-    # awk -F argument allows for any number of spaces around equal sign.
-    local DOCKER_REGISTRY_URL=$(curl -s "${CONSTANTS_CONFIG_URL}" \
-        | awk -F " *= *" '/^docker_registry_url/ {print $2}')
-    local CLOUDERA_NAMESPACE=$(curl -s "${CONSTANTS_CONFIG_URL}" \
-        | awk -F " *= *" '/^cloudera_namespace/ {print $2}')
-
-    CLUSTERDOCK_IMAGE="${DOCKER_REGISTRY_URL}/${CLOUDERA_NAMESPACE}/clusterdock:latest"
-  fi
+  CLUSTERDOCK_IMAGE="${CLUSTERDOCK_IMAGE:-docker.io/clusterdock/framework:latest}"
 
   if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
     sudo docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
@@ -112,17 +102,7 @@ clusterdock_ssh() {
   # Shift away arguments by 1. If anything is left, it's a command to run over SSH.
   shift 1
 
-  if [ -z "${CLUSTERDOCK_IMAGE}" ]; then
-    local CONSTANTS_CONFIG_URL='https://raw.githubusercontent.com/cloudera/clusterdock/master/clusterdock/constants.cfg'
-
-    # awk -F argument allows for any number of spaces around equal sign.
-    local DOCKER_REGISTRY_URL=$(curl -s "${CONSTANTS_CONFIG_URL}" \
-        | awk -F " *= *" '/^docker_registry_url/ {print $2}')
-    local CLOUDERA_NAMESPACE=$(curl -s "${CONSTANTS_CONFIG_URL}" \
-        | awk -F " *= *" '/^cloudera_namespace/ {print $2}')
-
-    CLUSTERDOCK_IMAGE="${DOCKER_REGISTRY_URL}/${CLOUDERA_NAMESPACE}/clusterdock:latest"
-  fi
+  CLUSTERDOCK_IMAGE="${CLUSTERDOCK_IMAGE:-docker.io/clusterdock/framework:latest}"
 
   if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
     sudo docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
