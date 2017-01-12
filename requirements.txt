@@ -37,6 +37,7 @@ pyasn1==0.1.9
 pycparser==2.14
 pycrypto==2.6.1
 pyOpenSSL==16.0.0
+pyyaml==3.12
 requests==2.10.0
 six==1.10.0
 urllib3==1.7.1
