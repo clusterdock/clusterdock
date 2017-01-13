@@ -172,7 +172,7 @@ class NodeGroup(object):
 
     def ssh(self, command):
         """Run command over SSH across all nodes in the NodeGroup in parallel."""
-        ssh_key = self[0].cluster.ssh_key
+        ssh_key = self.nodes[0].cluster.ssh_key
         ssh(command=command, hosts=[node.ip_address for node in self.nodes], ssh_key=ssh_key)
 
 class Node(object):
