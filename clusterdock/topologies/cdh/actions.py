@@ -51,9 +51,12 @@ def start(args):
     )
 
     for image in [primary_node_image, secondary_node_image]:
-        if args.always_pull or not is_image_available_locally(image):
+        if args.always_pull or args.only_pull or not is_image_available_locally(image):
             logger.info("Pulling image %s. This might take a little while...", image)
             pull_image(image)
+
+    if args.only_pull:
+        return
 
     CM_SERVER_PORT = 7180
     HUE_SERVER_PORT = 8888
