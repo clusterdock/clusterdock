@@ -25,7 +25,7 @@ from fabric.context_managers import quiet, settings, show
 import fabric.state
 
 SSH_TIMEOUT_IN_SECONDS = 1
-SSH_MAX_RETRIES = 60
+SSH_MAX_RETRIES = 180
 
 env.disable_known_hosts = True
 fabric.state.output['running'] = False
