@@ -18,6 +18,7 @@
 import argparse
 import importlib
 import logging
+import os
 import sys
 from os.path import dirname, abspath
 from time import gmtime, strftime, time
@@ -30,6 +31,7 @@ logger.setLevel(logging.INFO)
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
 from clusterdock import Constants
+from clusterdock.docker_utils import login
 from clusterdock.topologies.parsing import get_profile_config_item, parse_profiles
 
 DEFAULT_DOCKER_REGISTRY_URL = Constants.DEFAULT.docker_registry_url # pylint: disable=no-member
@@ -62,6 +64,10 @@ def main():
     # topology's action module and then call its start function.
     actions = importlib.import_module("clusterdock.topologies.{0}.actions".format(args.topology))
     start = time()
+    if os.environ.get('DOCKER_REGISTRY_INSECURE') == 'false':
+        login(username=os.environ['DOCKER_REGISTRY_USERNAME'],
+              password=os.environ['DOCKER_REGISTRY_PASSWORD'],
+              registry=args.registry_url)
     actions.start(args)
     end = time()
     time_diff = gmtime(end-start)
