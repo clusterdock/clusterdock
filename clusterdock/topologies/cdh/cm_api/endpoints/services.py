@@ -164,6 +164,36 @@ class ApiService(BaseApiResource):
   def get_activity(self, job_id):
     return self._get("activities/" + job_id, ApiActivity)
 
+  def list_watched_directories(self):
+    """
+    Returns a list of directories being watched by the Reports Manager.
+
+    @return: A list of directories being watched
+    @since: API v14
+    """
+    return self._get("watcheddir", ApiWatchedDir, ret_is_list=True, api_version=14)
+
+  def add_watched_directory(self, dir_path):
+    """
+    Adds a directory to the watching list.
+
+    @param dir_path: The path of the directory to be added to the watching list
+    @return: The added directory, or null if failed
+    @since: API v14
+    """
+    req = ApiWatchedDir(self._get_resource_root(), path=dir_path)
+    return self._post("watcheddir", ApiWatchedDir, data=req, api_version=14)
+
+  def remove_watched_directory(self, dir_path):
+    """
+    Removes a directory from the watching list.
+
+    @param dir_path: The path of the directory to be removed from the watching list
+    @return: The removed directory, or null if failed
+    @since: API v14
+    """
+    return self._delete("watcheddir/%s" % dir_path, ApiWatchedDir, api_version=14)
+
   def get_impala_queries(self, start_time, end_time, filter_str="", limit=100,
      offset=0):
     """
@@ -1473,9 +1503,12 @@ class ApiService(BaseApiResource):
       alertOnFail=alert_on_fail, alertOnAbort=alert_on_abort)
 
     if self.type == 'HDFS':
-      if not isinstance(arguments, ApiHdfsReplicationArguments):
+      if isinstance(arguments, ApiHdfsCloudReplicationArguments):
+        schedule.hdfsCloudArguments = arguments
+      elif isinstance(arguments, ApiHdfsReplicationArguments):
+        schedule.hdfsArguments = arguments
+      else:
         raise TypeError, 'Unexpected type for HDFS replication argument.'
-      schedule.hdfsArguments = arguments
     elif self.type == 'HIVE':
       if not isinstance(arguments, ApiHiveReplicationArguments):
         raise TypeError, 'Unexpected type for Hive replication argument.'
@@ -1863,6 +1896,16 @@ class ApiService(BaseApiResource):
     return self._get("commandsByName", ApiCommandMetadata, True,
         api_version=6)
 
+  def create_yarn_cm_container_usage_input_dir(self):
+    """
+    Creates the HDFS directory where YARN container usage metrics are
+    stored by NodeManagers for CM to read and aggregate into app usage metrics.
+
+    @return: Reference to submitted command.
+    @since: API v13
+    """
+    return self._cmd('yarnCreateCmContainerUsageInputDirCommand', api_version=13)
+
 class ApiServiceSetupInfo(ApiService):
   _ATTRIBUTES = {
     'name'    : None,
@@ -1932,4 +1975,3 @@ class ApiServiceSetupInfo(ApiService):
     @since: API v7
     """
     return self._cmd('firstRun', None, api_version=7)
-

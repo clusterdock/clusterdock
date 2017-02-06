@@ -574,7 +574,6 @@ class ApiCommand(BaseApiObject):
   def retry(self):
     """
     Retry a failed or aborted command.
-    Note: The retry will only work for ClusterUpgrade command for now.
 
     @return: A new ApiCommand object with the updated information.
     """
@@ -708,6 +707,18 @@ class ApiHdfsReplicationArguments(BaseApiObject):
     'exclusionFilters'          : None,
   }
 
+class ApiHdfsCloudReplicationArguments(ApiHdfsReplicationArguments):
+  @classmethod
+  def _get_attributes(cls):
+    if not cls.__dict__.has_key('_ATTRIBUTES'):
+      attrs = {
+        'sourceAccount' : None,
+        'destinationAccount' : None,
+      }
+      attrs.update(ApiHdfsReplicationArguments._get_attributes())
+      cls._ATTRIBUTES = attrs
+    return cls._ATTRIBUTES
+
 class ApiHdfsReplicationResult(BaseApiObject):
   _ATTRIBUTES = {
     'progress'            : ROAttr(),
@@ -750,6 +761,15 @@ class ApiImpalaUDF(BaseApiObject):
   def __str__(self):
     return "<ApiImpalaUDF>: %s, %s" % (self.database, self.signature)
 
+class ApiHiveUDF(BaseApiObject):
+  _ATTRIBUTES = {
+    'database'  : ROAttr(),
+    'signature' : ROAttr(),
+  }
+
+  def __str__(self):
+    return "<ApiHiveUDF>: %s, %s" % (self.database, self.signature)
+
 class ApiHiveReplicationArguments(BaseApiObject):
   _ATTRIBUTES = {
     'sourceService' : Attr(ApiServiceRef),
@@ -768,6 +788,8 @@ class ApiHiveReplicationResult(BaseApiObject):
     'tables'                : ROAttr(ApiHiveTable),
     'impalaUDFCount'        : ROAttr(),
     'impalaUDFs'            : ROAttr(ApiImpalaUDF),
+    'hiveUDFCount'          : ROAttr(),
+    'hiveUDFs'              : ROAttr(ApiHiveUDF),
     'errorCount'            : ROAttr(),
     'errors'                : ROAttr(),
     'dataReplicationResult' : ROAttr(ApiHdfsReplicationResult),
@@ -797,6 +819,7 @@ class ApiReplicationSchedule(BaseApiObject):
     'paused'          : None,
     'hdfsArguments'   : Attr(ApiHdfsReplicationArguments),
     'hiveArguments'   : Attr(ApiHiveReplicationArguments),
+    'hdfsCloudArguments'   : Attr(ApiHdfsCloudReplicationArguments),
     'alertOnStart'    : None,
     'alertOnSuccess'  : None,
     'alertOnFail'     : None,
@@ -1006,6 +1029,7 @@ class ApiConfig(BaseApiObject):
     'displayName'                  : ROAttr(),
     'description'                  : ROAttr(),
     'relatedName'                  : ROAttr(),
+    'sensitive'                    : ROAttr(),
     'validationState'              : ROAttr(),
     'validationMessage'            : ROAttr(),
     'validationWarningsSuppressed' : ROAttr()
@@ -1037,6 +1061,25 @@ class ApiImpalaQuery(BaseApiObject):
   def __str__(self):
     return "<ApiImpalaQuery>: %s" % (self.queryId)
 
+#
+# WatchedDirectories data types
+#
+
+class ApiWatchedDir(BaseApiObject):
+
+  _ATTRIBUTES = {
+    'path'  : None
+  }
+
+  def __str__(self):
+    return "<ApiWatchedDir>: %s" % (self.path)
+
+class ApiWatchedDirList(ApiList):
+
+  _ATTRIBUTES = {
+    'watchedDirs'  : ROAttr(ApiWatchedDir)
+  }
+  _MEMBER_CLASS = ApiWatchedDir
 
 class ApiImpalaQueryResponse(BaseApiObject):
 
