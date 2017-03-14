@@ -123,6 +123,7 @@ def start(args):
         deployment.add_hosts_to_cluster(secondary_node_fqdn=secondary_nodes[0].fqdn,
                                         all_fqdns=[node.fqdn for node in cluster])
 
+    deployment.update_cm_server_configs()
     deployment.update_database_configs()
     deployment.update_hive_metastore_namenodes()
 

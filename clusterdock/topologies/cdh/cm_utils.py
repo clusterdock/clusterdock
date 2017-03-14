@@ -84,6 +84,14 @@ def set_hdfs_replication_configs(cluster):
         'dfs_replication_max': len(cluster.list_hosts())
     })
 
+def update_cm_server_configs(api):
+    # When images are created, CM is set to not manage parcels because, if it were, it would
+    # delete the already-present parcels in our Docker images. To improve user experience once
+    # hosts been added to a CM cluster, however, we can enable this back during the start process.
+    logger.info('Updating CM server configurations...')
+    cm = api.get_cloudera_manager()
+    cm.update_config({'manages_parcels': True})
+
 def update_database_configs(api, cluster):
     # In our case, the databases are always co-located with the CM host, so we grab that from the
     # ApiResource object and then update various configurations accordingly.
