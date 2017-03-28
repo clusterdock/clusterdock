@@ -106,6 +106,9 @@ class ClouderaManagerDeployment(object):
                     logger.warning(("Failed to update NameNode references in Hive metastore "
                                     "(command returned %s)."), update_metastore_namenodes_cmd)
 
+    def update_all_hosts_configs(self, configs):
+        cm_utils.update_all_hosts_configs(api=self.api, configs=configs)
+
     def update_cm_server_configs(self):
         cm_utils.update_cm_server_configs(api=self.api)
 

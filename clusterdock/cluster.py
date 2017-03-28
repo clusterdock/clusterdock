@@ -202,6 +202,11 @@ class Node(object):
         # host machines.
         self.volumes = [{'/etc/localtime': '/etc/localtime'}] + kwargs.get('volumes', [])
 
+        # Nodes can be instantiated with a volumes_from kwarg, which should be the name of a Docker
+        # image. A container from this image will be created (not run) and the node will use its
+        # container ID as the value of the volumes_from param when creating a host_config.
+        self.volumes_from = kwargs.get('volumes_from')
+
         # Define a number of instance attributes that will get assigned proper values when the node
         # starts.
         self.cluster = None
@@ -231,6 +236,10 @@ class Node(object):
 
         if self.volumes:
             host_configs['binds'] = self._get_binds()
+
+        if self.volumes_from:
+            host_configs['volumes_from'] = [client.create_container(image=image)['Id']
+                                            for image in self.volumes_from]
 
         self.host_config = client.create_host_config(**host_configs)
 

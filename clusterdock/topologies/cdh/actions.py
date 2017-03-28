@@ -50,7 +50,15 @@ def start(args):
         args.cdh_string, args.cm_string
     )
 
-    for image in [primary_node_image, secondary_node_image]:
+    images = [primary_node_image, secondary_node_image]
+    if args.java:
+        java_image = "{0}/{1}/clusterdock:cdh_{2}".format(
+            args.registry_url, args.namespace or DEFAULT_CLOUDERA_NAMESPACE,
+            args.java
+        )
+        images.append(java_image)
+
+    for image in images:
         if args.always_pull or args.only_pull or not is_image_available_locally(image):
             logger.info("Pulling image %s. This might take a little while...", image)
             pull_image(image)
@@ -62,9 +70,11 @@ def start(args):
     HUE_SERVER_PORT = 8888
 
     primary_node = Node(hostname=args.primary_node[0], network=args.network,
-                        image=primary_node_image, ports=[CM_SERVER_PORT, HUE_SERVER_PORT])
+                        image=primary_node_image, ports=[CM_SERVER_PORT, HUE_SERVER_PORT],
+                        **{'volumes_from': [java_image]} if args.java else {})
 
-    secondary_nodes = [Node(hostname=hostname, network=args.network, image=secondary_node_image)
+    secondary_nodes = [Node(hostname=hostname, network=args.network, image=secondary_node_image,
+                            **{'volumes_from': [java_image]} if args.java else {})
                        for hostname in args.secondary_nodes]
 
     secondary_node_group = NodeGroup(name='secondary', nodes=secondary_nodes)
@@ -73,6 +83,9 @@ def start(args):
 
     cluster = Cluster(topology='cdh', node_groups=node_groups, network_name=args.network)
     cluster.start()
+
+    if args.java:
+        set_cm_server_java_home(primary_node, '/usr/java/{0}'.format(args.java))
 
     '''
     A hack is needed here. In short, Docker mounts a number of files from the host into
@@ -102,6 +115,7 @@ def start(args):
     # It looks like there may be something buggy when it comes to restarting the CM agent. Keep
     # going if this happens while we work on reproducing the problem.
     try:
+        restart_cm_server(primary_node)
         restart_cm_agents(cluster)
     except:
         pass
@@ -122,6 +136,11 @@ def start(args):
     if len(cluster) > 2:
         deployment.add_hosts_to_cluster(secondary_node_fqdn=secondary_nodes[0].fqdn,
                                         all_fqdns=[node.fqdn for node in cluster])
+
+    if args.java:
+        deployment.update_all_hosts_configs(configs={
+            'java_home': '/usr/java/{0}'.format(args.java)
+        })
 
     deployment.update_cm_server_configs()
     deployment.update_database_configs()
@@ -166,6 +185,10 @@ def start(args):
                 "direct any feedback to our community forum at "
                 "http://tiny.cloudera.com/hadoop-101-forum.")
 
+def restart_cm_server(primary_node):
+    logger.info('Restarting CM server...')
+    primary_node.ssh('service cloudera-scm-server restart')
+
 def restart_cm_agents(cluster):
     logger.info('Restarting CM agents...')
     cluster.ssh('service cloudera-scm-agent restart')
@@ -179,6 +202,14 @@ def change_cm_server_host(cluster, server_host):
     logger.info("Changing server_host to %s in /etc/cloudera-scm-agent/config.ini...",
                 server_host)
     cluster.ssh(change_server_host_command)
+
+def set_cm_server_java_home(node, java_home):
+    set_cm_server_java_home_command = (
+        'echo "export JAVA_HOME={0}" >> /etc/default/cloudera-scm-server'.format(java_home)
+    )
+    logger.info("Setting JAVA_HOME to %s in /etc/default/cloudera-scm-server...",
+                java_home)
+    node.ssh(set_cm_server_java_home_command)
 
 def remove_files(cluster, files, nodes):
     logger.info("Removing files (%s) from hosts (%s)...",
