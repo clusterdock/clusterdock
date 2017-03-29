@@ -41,7 +41,7 @@ from clusterdock.ssh import ssh
 logger = logging.getLogger(__name__) # pylint: disable=invalid-name
 logger.setLevel(logging.INFO)
 
-client = Client() # pylint: disable=invalid-name
+client = Client(timeout=600) # pylint: disable=invalid-name
 
 class Cluster(object):
     """The central abstraction for dealing with Docker container clusters. Instances of this class
@@ -259,14 +259,13 @@ class Node(object):
                                                    for volume in self.volumes
                                                    if volume.keys()[0] not in ['/etc/localtime']],
                                                   start=1)
-                      }
+                      },
+            'networking_config': client.create_networking_config({
+                self.network: client.create_endpoint_config(aliases=[self.hostname])
+            })
         }
         self.container_id = client.create_container(**container_configs)['Id']
 
-        # Don't start up containers on the default 'bridge' network for better isolation.
-        client.disconnect_container_from_network(container=self.container_id, net_id='bridge')
-        client.connect_container_to_network(container=self.container_id, net_id=self.network,
-                                            aliases=[self.hostname])
         client.start(container=self.container_id)
 
         self.ip_address = get_container_ip_address(container_id=self.container_id,
