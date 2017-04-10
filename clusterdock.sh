@@ -43,7 +43,7 @@ clusterdock_run() {
   CLUSTERDOCK_IMAGE="${CLUSTERDOCK_IMAGE:-docker.io/clusterdock/framework:latest}"
 
   if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-    sudo docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
+    docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
   fi
 
   if [ -n "${CLUSTERDOCK_TARGET_DIR}" ]; then
@@ -64,16 +64,16 @@ clusterdock_run() {
 
   if [ -n "${CLUSTERDOCK_TOPOLOGY_IMAGE}" ]; then
     if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-      sudo docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}" &> /dev/null
+      docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}" &> /dev/null
     fi
 
-    local TOPOLOGY_CONTAINER_ID=$(sudo docker create "${CLUSTERDOCK_TOPOLOGY_IMAGE}")
+    local TOPOLOGY_CONTAINER_ID=$(docker create "${CLUSTERDOCK_TOPOLOGY_IMAGE}")
     local TOPOLOGY_VOLUME="--volumes-from=${TOPOLOGY_CONTAINER_ID}"
   fi
 
   # The /etc/hosts bind-mount allows clusterdock to update /etc/hosts on the host machine for
   # better access to internal container addresses.
-  sudo docker run --net=host -t \
+  docker run --net=host -t \
       --privileged \
       ${TARGET_DIR_MOUNT} \
       ${TOPOLOGY_VOLUME} \
@@ -87,7 +87,7 @@ clusterdock_run() {
       "${CLUSTERDOCK_IMAGE}" $@
 
   if [ -n "${TOPOLOGY_CONTAINER_ID}" ]; then
-    sudo docker rm -v "${TOPOLOGY_CONTAINER_ID}" &> /dev/null
+    docker rm -v "${TOPOLOGY_CONTAINER_ID}" &> /dev/null
   fi
 }
 
@@ -105,26 +105,26 @@ clusterdock_ssh() {
   CLUSTERDOCK_IMAGE="${CLUSTERDOCK_IMAGE:-docker.io/clusterdock/framework:latest}"
 
   if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-    sudo docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
+    docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
   fi
 
   if [ -n "${CLUSTERDOCK_TOPOLOGY_IMAGE}" ]; then
     if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-      sudo docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}" &> /dev/null
+      docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}" &> /dev/null
     fi
 
-    local TOPOLOGY_CONTAINER_ID=$(sudo docker create "${CLUSTERDOCK_TOPOLOGY_IMAGE}")
+    local TOPOLOGY_CONTAINER_ID=$(docker create "${CLUSTERDOCK_TOPOLOGY_IMAGE}")
     local TOPOLOGY_VOLUME="--volumes-from=${TOPOLOGY_CONTAINER_ID}"
   fi
 
   local ID
   for ID in $(docker ps -qa); do
-    if [ "$(docker inspect --format '{{.Config.Hostname}}' ${ID})" == "${NODE}" ]; then
+    if [ "$(docker inspect --format '{{.Config.Hostname}}' ${ID})" = "${NODE}" ]; then
       break
     fi
   done
 
   # In order to get a proper login shell with expected files sourced (e.g. /etc/environment), we
   # get into the container using docker exec running ssh (instead of Bash).
-  sudo docker exec -it ${ID} ssh localhost "$*"
+  docker exec -it ${ID} ssh localhost "$*"
 }
