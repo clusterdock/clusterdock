@@ -15,8 +15,15 @@
 # limitations under the License.
 
 import logging
-from os.path import join
+from argparse import Namespace
+from collections import OrderedDict
+from datetime import datetime
+from os import makedirs
+from os.path import dirname, join
 from socket import getfqdn
+from sys import stdout
+from time import sleep
+from uuid import uuid4
 
 from docker import Client
 
@@ -28,6 +35,7 @@ from clusterdock.topologies.cdh.cm import ClouderaManagerDeployment
 from clusterdock.utils import wait_for_port_open
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 DEFAULT_CLOUDERA_NAMESPACE = Constants.DEFAULT.cloudera_namespace # pylint: disable=no-member
 
@@ -56,14 +64,6 @@ def start(args):
             pull_image(image)
 
     if args.only_pull:
-        # To ensure that images pulled don't incur a performance penalty when started
-        # for the first time, create containers from each of them.
-        client = Client()
-        for image in images:
-            logger.debug('Creating container from image %s ...', image)
-            container = client.create_container(image)['Id']
-            logger.debug('Removing container %s ...', container)
-            client.remove_container(container=container, v=True, force=True)
         return
 
     CM_SERVER_PORT = 7180
@@ -180,6 +180,10 @@ def start(args):
             raise Exception('Failed to start Cloudera Management service.')
 
         deployment.validate_services_started()
+
+    logger.info("We'd love to know what you think of our CDH topology for clusterdock! Please "
+                "direct any feedback to our community forum at "
+                "http://tiny.cloudera.com/hadoop-101-forum.")
 
 def restart_cm_server(primary_node):
     logger.info('Restarting CM server...')
