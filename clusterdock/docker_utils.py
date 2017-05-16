@@ -311,7 +311,7 @@ def remove_all_networks():
 def remove_container(name):
     """Removes a particular Docker container on the host. If it is currently running, it will first
     be killed (via force)."""
-    client.remove_container(container=name, force=True)
+    client.remove_container(container=name, v=True, force=True)
 
 def remove_network(name):
     """Removes the specified Docker network from the host."""
