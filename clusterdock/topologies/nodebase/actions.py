@@ -14,29 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
 import logging
-import os
-from os.path import dirname, join
+import yaml
 
-from clusterdock import Constants
 from clusterdock.cluster import Cluster, Node, NodeGroup
 from clusterdock.docker_utils import is_image_available_locally, pull_image
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-DEFAULT_CLOUDERA_NAMESPACE = Constants.DEFAULT.cloudera_namespace # pylint: disable=no-member
+DEFAULT_CLUSTERDOCK_NAMESPACE = 'clusterdock'
 
 def start(args):
-    image = "{0}/{1}/clusterdock:{2}_nodebase".format(args.registry_url,
-                                                      args.namespace or DEFAULT_CLOUDERA_NAMESPACE,
-                                                      args.operating_system)
+    image = '{0}/{1}/topology_nodebase:{2}'.format(args.registry_url,
+                                                   args.namespace or DEFAULT_CLUSTERDOCK_NAMESPACE,
+                                                   args.operating_system)
     if args.always_pull or not is_image_available_locally(image):
         pull_image(image)
 
-    node_groups = [NodeGroup(name='nodes', nodes=[Node(hostname=hostname, network=args.network,
-                                                       image=image)
-                                                  for hostname in args.nodes])]
+    node_groups = [NodeGroup(name='nodes',
+                             nodes=[Node(hostname=hostname,
+                                         network=args.network,
+                                         image=image,
+                                         devices=(yaml.load(args.node_disks).get(hostname, [])
+                                                  if args.node_disks
+                                                  else []))
+                                    for hostname in args.nodes])]
     cluster = Cluster(topology='nodebase', node_groups=node_groups, network_name=args.network)
     cluster.start()

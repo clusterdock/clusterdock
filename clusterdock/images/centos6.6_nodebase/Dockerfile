@@ -15,6 +15,9 @@
 # limitations under the License.
 FROM centos:6.6
 
+# Workaround for https://github.com/CentOS/sig-cloud-instance-images/issues/15.
+RUN yum install -y yum-plugin-ovl
+
 # Install useful things that are missing from the centos:6.6 image.
 RUN yum install -y openssh-clients \
     openssh-server \
