@@ -148,6 +148,13 @@ class Cluster(object):
     def __len__(self):
         return len(self.nodes)
 
+    def get_node_groups_by_names(self, node_group_names):
+        """ Returns a list of node_groups whose names match in the list of node_group_names."""
+        return [node_group for node_group in self.node_groups if node_group.name in node_group_names]
+
+    def get_nodes_by_node_group_names(self, node_group_names):
+        """ Returns a list of nodes belonging to node_groups whose names match in the list of node_group_names."""
+        return [node for node_group in self.node_groups if node_group.name in node_group_names for node in node_group.nodes]
 
 class NodeGroup(object):
     """A node group denotes a set of Nodes that share some characteristic so as to make it desirable

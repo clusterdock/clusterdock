@@ -28,6 +28,10 @@ SSH_TIMEOUT_IN_SECONDS = 1
 SSH_MAX_RETRIES = 180
 
 env.disable_known_hosts = True
+# Workaround for CentOS 6.6 issue with yum is available in
+# https://github.com/clusterdock/framework/commit/205f3ca1cac4d3037b194a209683f7a8793e3953
+# TODO: Once the node images based on latest centos images are available, remove the following line
+env.warn_only=True
 fabric.state.output['running'] = False
 
 @parallel(pool_size=8)
