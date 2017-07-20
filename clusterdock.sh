@@ -35,6 +35,8 @@ clusterdock_run() {
   # - CLUSTERDOCK_IMAGE: the Docker image from which to start the clusterdock framework container
   # - CLUSTERDOCK_PULL: whether to pull the clusterdock image and CLUSTERDOCK_TOPOLOGY_IMAGE, if
   #                     specified (either true or false; defaults to true)
+  # - CLUSTERDOCK_DIRECTORY: a folder on the host to mount into /root/clusterdock, to be used when
+  #                          testing clusterdock framework changes without requiring rebuilding the image
   # - CLUSTERDOCK_TARGET_DIR: a folder on the host to mount into /root/target in the clusterdock
   #                           container
   # - CLUSTERDOCK_TOPOLOGY_IMAGE: a Docker image to mount into clusterdock's topology folder and
@@ -48,6 +50,10 @@ clusterdock_run() {
 
   if [ -n "${CLUSTERDOCK_TARGET_DIR}" ]; then
     local TARGET_DIR_MOUNT="-v ${CLUSTERDOCK_TARGET_DIR}:/root/target"
+  fi
+
+  if [ -n "${CLUSTERDOCK_DIRECTORY}" ]; then
+    local CLUSTERDOCK_DIR_MOUNT="-v ${CLUSTERDOCK_DIRECTORY}:/root/clusterdock"
   fi
 
   if [ -n "${CLUSTERDOCK_DOCKER_REGISTRY_INSECURE}" ]; then
@@ -76,6 +82,7 @@ clusterdock_run() {
   docker run --net=host -t \
       --privileged \
       ${TARGET_DIR_MOUNT} \
+      ${CLUSTERDOCK_DIR_MOUNT} \
       ${TOPOLOGY_VOLUME} \
       ${REGISTRY_INSECURE} \
       ${REGISTRY_USERNAME} \
