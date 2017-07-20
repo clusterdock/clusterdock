@@ -28,10 +28,6 @@
 ## @param        Python script to run relative to the ./dev-support/clusterdock/clusterdock folder
 clusterdock_run() {
   # Supported environmental variables:
-  # - CLUSTERDOCK_DOCKER_REGISTRY_INSECURE: whether the Docker registry is insecure (either true or
-  #                                         false)
-  # - CLUSTERDOCK_DOCKER_REGISTRY_USERNAME: username needed to login to any secure Docker registry
-  # - CLUSTERDOCK_DOCKER_REGISTRY_PASSWORD: password needed to login to any secure Docker registry
   # - CLUSTERDOCK_IMAGE: the Docker image from which to start the clusterdock framework container
   # - CLUSTERDOCK_PULL: whether to pull the clusterdock image and CLUSTERDOCK_TOPOLOGY_IMAGE, if
   #                     specified (either true or false; defaults to true)
@@ -45,7 +41,7 @@ clusterdock_run() {
   CLUSTERDOCK_IMAGE="${CLUSTERDOCK_IMAGE:-docker.io/clusterdock/framework:latest}"
 
   if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-    docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
+    docker pull "${CLUSTERDOCK_IMAGE}"
   fi
 
   if [ -n "${CLUSTERDOCK_TARGET_DIR}" ]; then
@@ -54,18 +50,6 @@ clusterdock_run() {
 
   if [ -n "${CLUSTERDOCK_DIRECTORY}" ]; then
     local CLUSTERDOCK_DIR_MOUNT="-v ${CLUSTERDOCK_DIRECTORY}:/root/clusterdock"
-  fi
-
-  if [ -n "${CLUSTERDOCK_DOCKER_REGISTRY_INSECURE}" ]; then
-    local REGISTRY_INSECURE="-e DOCKER_REGISTRY_INSECURE=${CLUSTERDOCK_DOCKER_REGISTRY_INSECURE}"
-  fi
-
-  if [ -n "${CLUSTERDOCK_DOCKER_REGISTRY_USERNAME}" ]; then
-    local REGISTRY_USERNAME="-e DOCKER_REGISTRY_USERNAME=${CLUSTERDOCK_DOCKER_REGISTRY_USERNAME}"
-  fi
-
-  if [ -n "${CLUSTERDOCK_DOCKER_REGISTRY_PASSWORD}" ]; then
-    local REGISTRY_PASSWORD="-e DOCKER_REGISTRY_PASSWORD=${CLUSTERDOCK_DOCKER_REGISTRY_PASSWORD}"
   fi
 
   if [ -n "${CLUSTERDOCK_TOPOLOGY_IMAGE}" ]; then
@@ -84,11 +68,9 @@ clusterdock_run() {
       ${TARGET_DIR_MOUNT} \
       ${CLUSTERDOCK_DIR_MOUNT} \
       ${TOPOLOGY_VOLUME} \
-      ${REGISTRY_INSECURE} \
-      ${REGISTRY_USERNAME} \
-      ${REGISTRY_PASSWORD} \
       -v /tmp/clusterdock \
       -v /etc/hosts:/etc/hosts \
+      -v ~/.docker:/root/.docker \
       -v /etc/localtime:/etc/localtime \
       -v /var/run/docker.sock:/var/run/docker.sock \
       "${CLUSTERDOCK_IMAGE}" $@
