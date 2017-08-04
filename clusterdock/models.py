@@ -36,13 +36,25 @@ class Cluster:
     No Docker behavior is actually invoked until the start method is called.
 
     Args:
-        node_groups (:obj:`list`): A list of :py:obj:`clusterdock.models.NodeGroup` instances.
+        *nodes: One or more :py:obj:`clusterdock.models.Node` instances.
     """
 
-    def __init__(self, *node_groups):
-        self.node_groups = node_groups
+    def __init__(self, *nodes):
+        self.nodes = nodes
+        self.node_groups = {}
 
-        self.nodes = [node for node_group in self.node_groups for node in node_group]
+        for node in self.nodes:
+            if node.group not in self.node_groups:
+                logger.debug('Creating NodeGroup %s ...',
+                             node.group)
+                self.node_groups[node.group] = NodeGroup(node.group, node)
+            else:
+                self.node_groups[node.group].nodes.append(node)
+            # Put this outside the if-else because, whether a new NodeGroup is created
+            # or not, the node will be added to it.
+            logger.debug('Adding node (%s) to NodeGroup %s ...',
+                         node.hostname,
+                         node.group)
 
     def start(self, network, pull_images=False, update_etc_hosts=True):
         """Start the cluster.
@@ -111,11 +123,14 @@ class NodeGroup:
 
     Args:
         name (:obj:`str`): The name by which to refer to the group.
-        nodes (:obj:`list`): A list of :py:class:`clusterdock.models.Node` instances.
+        *nodes: One or more :py:class:`clusterdock.models.Node` instances.
     """
-    def __init__(self, name, nodes):
+    def __init__(self, name, *nodes):
         self.name = name
-        self.nodes = nodes
+
+        # We want the list of nodes to be mutable, so the tuple we get from *nodes
+        # needs to be cast.
+        self.nodes = list(nodes)
 
     def __iter__(self):
         for node in self.nodes:
@@ -136,6 +151,7 @@ class Node:
 
     Args:
         hostname (:obj:`str`): Hostname of the node.
+        group (:obj:`str`): :py:obj:`clusterdock.models.NodeGroup` to which the node should belong.
         image (:obj:`str`): Docker image with which to start the container.
         volumes (:obj:`dict`, optional): A dictionary (key: absolute path on host; value: absolute
             path in container) of volumes to create. Default: ``None``
@@ -157,13 +173,14 @@ class Node:
         'volumes': {'/etc/localtime': {'bind': '/etc/localtime'}},
     }
 
-    def __init__(self, hostname, image, volumes=None, volumes_from=None, **container_configs):
+    def __init__(self, hostname, group, image, volumes=None, volumes_from=None, **container_configs):
         self.hostname = hostname
+        self.group = group
 
-        self.volumes_from = volumes_from
         self.container_configs = self._prepare_container_configs(**dict(image=image,
                                                                         volumes=volumes or {},
                                                                         **container_configs))
+        self.volumes_from = volumes_from
 
     def start(self, network):
         """Start the node.

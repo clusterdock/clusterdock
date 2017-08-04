@@ -33,7 +33,6 @@ logger.addHandler(handler)
 
 
 def main():
-
     # To prevent a -h argument from halting parsing prematurely, we disable
     # help in the parser, but then add it manually after parse_known_args is run.
     parser = argparse.ArgumentParser(add_help=False)
