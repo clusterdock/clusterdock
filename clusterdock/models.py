@@ -153,6 +153,8 @@ class Node:
         hostname (:obj:`str`): Hostname of the node.
         group (:obj:`str`): :py:obj:`clusterdock.models.NodeGroup` to which the node should belong.
         image (:obj:`str`): Docker image with which to start the container.
+        ports (:obj:`list`, optional): A list of container ports to expose to the host.
+            Default: ``None``
         volumes (:obj:`dict`, optional): A dictionary (key: absolute path on host; value: absolute
             path in container) of volumes to create. Default: ``None``
         volumes_from (:obj:`list`, optional): A list of images whose volumes should be used
@@ -173,11 +175,13 @@ class Node:
         'volumes': {'/etc/localtime': {'bind': '/etc/localtime'}},
     }
 
-    def __init__(self, hostname, group, image, volumes=None, volumes_from=None, **container_configs):
+    def __init__(self, hostname, group, image,
+                 ports=None, volumes=None, volumes_from=None, **container_configs):
         self.hostname = hostname
         self.group = group
 
         self.container_configs = self._prepare_container_configs(**dict(image=image,
+                                                                        ports=ports or [],
                                                                         volumes=volumes or {},
                                                                         **container_configs))
         self.volumes_from = volumes_from
@@ -229,6 +233,11 @@ class Node:
 
         configs['image'] = container_configs['image']
         logger.debug('Added image (%s) to container config.', configs['image'])
+
+        # docker-py expects port bindings as a dictionary with container ports as keys and
+        # host ports as values (a host port of None tells it to select a random port).
+        if container_configs['ports']:
+            configs['ports'] = dict.fromkeys(container_configs['ports'], None)
 
         volumes = {host_path: {'bind': container_path}
                    for host_path, container_path in container_configs['volumes'].items()}
