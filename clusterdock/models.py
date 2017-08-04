@@ -97,6 +97,18 @@ class Cluster:
                     (datetime.datetime.min
                          + start_cluster_duration).time().isoformat(timespec='milliseconds'))
 
+    def execute(self, command, **kwargs):
+        """Execute a command on every :py:class:`clusterdock.models.Node` within the
+            :py:class:`clusterdock.models.Cluster`.
+
+        Args:
+            command (:obj:`str`): Command to execute.
+            **kwargs: Additional keyword arguments to pass to
+                :py:meth:`clusterdock.models.Node.execute`.
+        """
+        for node in self.nodes:
+            node.execute(command, **kwargs)
+
     def __iter__(self):
         for node in self.nodes:
             yield node
@@ -136,14 +148,17 @@ class NodeGroup:
         for node in self.nodes:
             yield node
 
-    def execute(self, command):
+    def execute(self, command, **kwargs):
         """Execute a command on every :py:class:`clusterdock.models.Node` within the
             :py:class:`clusterdock.models.NodeGroup`.
 
         Args:
             command (:obj:`str`): Command to execute.
+            **kwargs: Additional keyword arguments to pass to
+                :py:meth:`clusterdock.models.Node.execute`.
         """
-        logger.debug('Executing command (%s).', command)
+        for node in self.nodes:
+            node.execute(command, **kwargs)
 
 
 class Node:
