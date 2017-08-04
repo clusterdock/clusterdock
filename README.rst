@@ -27,13 +27,16 @@ is a swell project, if I may say so myself.
 "I hate reading, make this quick."
 ==================================
 
-To begin, clone a clusterdock topology to your machine. For this example,
-we'll use the `nodebase topology <https://github.com/clusterdock/topology_nodebase>`_.
-Assuming that you've already, installed **clusterdock**, you could start a 2-node cluster:
+Before doing anything, install a recent version of `Docker`_ to your machine. Next,
+clone a clusterdock topology to your machine. For this example,
+we'll use the `nodebase topology`_.
+Assuming that you've already installed **clusterdock**, you could start a 2-node cluster:
+
+.. _Docker: https://www.docker.com/
+.. _nodebase topology: https://github.com/clusterdock/topology_nodebase
 
 .. code-block:: console
 
-    $ cd $HOME
     $ git clone https://github.com/clusterdock/topology_nodebase.git
     $ clusterdock start topology_nodebase
     2017-08-03 10:04:18 PM clusterdock.models   INFO     Starting cluster on network (cluster) ...
