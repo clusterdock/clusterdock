@@ -119,6 +119,7 @@ html_theme = 'alabaster'
 html_theme_options = {'github_banner': 'true',
                       'github_repo': 'clusterdock',
                       'github_user': 'clusterdock',
+                      'logo': 'clusterdock-logo.png',
                       'show_powered_by': False}
 
 # Add any paths that contain custom themes here, relative to this directory.

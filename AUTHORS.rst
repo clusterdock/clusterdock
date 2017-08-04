@@ -17,3 +17,11 @@ Contributors
 ------------
 
 None yet. Why not be the first?
+
+Other credits
+-------------
+
+- Our logo was derived from an icon created by `Freepik`_ from `Flaticon`_.
+
+.. _Freepik: http://www.freepik.com/
+.. _Flaticon: http://www.flaticon.com/
