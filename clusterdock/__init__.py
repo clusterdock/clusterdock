@@ -13,6 +13,13 @@
 
 """Top-level package for clusterdock."""
 
+import logging
+
 __author__ = """Dima Spivak"""
 __email__ = 'dima@spivak.ch'
 __version__ = '1.0.2'
+
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s %(name)-20s %(levelname)-8s %(message)s',
+                                       '%Y-%m-%d %I:%M:%S %p'))
+logging.getLogger(__name__).addHandler(handler)

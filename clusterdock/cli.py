@@ -12,10 +12,12 @@
 # limitations under the License.
 
 import argparse
+import datetime
 import importlib
 import logging
 import os
 import sys
+from dateutil.relativedelta import relativedelta
 
 import yaml
 
@@ -23,13 +25,9 @@ from .config import defaults
 
 FORMATTER_CLASS = argparse.ArgumentDefaultsHelpFormatter
 
-# This logger, essentially our root, will be named clusterdock so that other modules in this
-# package have it as its parent.
-logger = logging.getLogger('clusterdock')
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(asctime)s %(name)-20s %(levelname)-8s %(message)s',
-                                       '%Y-%m-%d %I:%M:%S %p'))
-logger.addHandler(handler)
+# Note that while we use a `logging.Logger` instance throughout (to make tracing easier),
+# we set the logging level on the root logger based on whether -v/--verbose is passed.
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -42,10 +40,10 @@ def main():
     # argparse.ArgumentParser.parse_known_args returns a tuple where the first element is a
     # Namespace.
     args, unknown_args = parser.parse_known_args()
+    logging.getLogger().setLevel(logging.DEBUG if args.verbose else logging.INFO)
     logger.debug('Parsed known args (%s) and found unknown args (%s).',
                  '; '.join('{}="{}"'.format(k, v) for k, v in vars(args).items()),
                  '; '.join(unknown_args))
-    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     # Since some actions (e.g. start, build) have topology-dependent command line interfaces, we
     # parse what's available so far to get that topology's name.
@@ -74,6 +72,25 @@ def main():
     start_parser = action_subparsers.add_parser('start',
                                                 formatter_class=FORMATTER_CLASS,
                                                 add_help=False)
+    start_parser.add_argument('--always-pull',
+                              help="Pull latest images, even if they're available locally",
+                              action='store_true')
+    start_parser.add_argument('--namespace',
+                              help='Namespace to use when looking for images',
+                              default=defaults['DEFAULT_NAMESPACE'],
+                              metavar='ns')
+    start_parser.add_argument('--network',
+                              help='Docker network to use',
+                              default=defaults['DEFAULT_NETWORK'],
+                              metavar='nw')
+    start_parser.add_argument('-o', '--operating-system',
+                              help='Operating system to use for cluster nodes',
+                              default=defaults['DEFAULT_OPERATING_SYSTEM'],
+                              metavar='sys')
+    start_parser.add_argument('-r', '--registry',
+                              help='Docker Registry from which to pull images',
+                              default=defaults['DEFAULT_REGISTRY'],
+                              metavar='url')
     start_parser.add_argument('topology',
                               help='A clusterdock topology directory')
 
@@ -136,25 +153,6 @@ def main():
         _add_topology_action_args(parser=start_parser,
                                   action='start',
                                   topology_configs=topology_configs)
-        start_parser.add_argument('--always-pull',
-                                  help="Pull latest images, even if they're available locally",
-                                  action='store_true')
-        start_parser.add_argument('--namespace',
-                                  help='Namespace to use when looking for images',
-                                  default=defaults['DEFAULT_NAMESPACE'],
-                                  metavar='ns')
-        start_parser.add_argument('--network',
-                                  help='Docker network to use',
-                                  default=defaults['DEFAULT_NETWORK'],
-                                  metavar='nw')
-        start_parser.add_argument('-o', '--operating-system',
-                                  help='Operating system to use for cluster nodes',
-                                  default=defaults['DEFAULT_OPERATING_SYSTEM'],
-                                  metavar='sys')
-        start_parser.add_argument('-r', '--registry',
-                                  help='Docker Registry from which to pull images',
-                                  default=defaults['DEFAULT_REGISTRY'],
-                                  metavar='url')
 
         node_group_argument_group = start_parser.add_argument_group('Node groups')
         for node_group, default_nodes in topology_configs.get('node groups', {}).items():
@@ -175,7 +173,12 @@ def main():
         sys.path.append(os.path.dirname(os.path.realpath(args.topology)))
         logger.debug('PYTHONPATH: %s', sys.path)
         action = importlib.import_module('{}.{}'.format(topology, args.action))
+        start_cluster_start_time = datetime.datetime.now()
         action.main(args)
+        start_cluster_delta = relativedelta(datetime.datetime.now(), start_cluster_start_time)
+        logger.info('Cluster started successfully (total time: %sm %ss).',
+                    start_cluster_delta.minutes,
+                    start_cluster_delta.seconds)
     else:
         action = importlib.import_module('clusterdock.actions.{}'.format(args.action))
         action.main(args)

@@ -22,7 +22,7 @@ import docker
 import requests
 
 from .exceptions import DuplicateHostnamesError
-from .utils import nested_get
+from .utils import nested_get, wait_for_condition
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,6 @@ class Cluster:
             update_etc_hosts (:obj:`bool`): Update the /etc/hosts file on the host with the hostname
                 and IP address of the container. Default: ``True``
         """
-        start_cluster_start_time = datetime.datetime.now()
         logger.info('Starting cluster on network (%s) ...', network)
         the_network = self._setup_network(name=network)
 
@@ -91,11 +90,6 @@ class Cluster:
 
         for node in self:
             node.start(network)
-
-        start_cluster_duration = datetime.datetime.now() - start_cluster_start_time
-        logger.info('Cluster started successfully (total time: %s).',
-                    (datetime.datetime.min
-                         + start_cluster_duration).time().isoformat(timespec='milliseconds'))
 
     def execute(self, command, **kwargs):
         """Execute a command on every :py:class:`clusterdock.models.Node` within the
@@ -168,38 +162,48 @@ class Node:
         hostname (:obj:`str`): Hostname of the node.
         group (:obj:`str`): :py:obj:`clusterdock.models.NodeGroup` to which the node should belong.
         image (:obj:`str`): Docker image with which to start the container.
-        ports (:obj:`list`, optional): A list of container ports to expose to the host.
+        ports (:obj:`list`, optional): A list of container ports (integers) to expose to the host.
             Default: ``None``
-        volumes (:obj:`dict`, optional): A dictionary (key: absolute path on host; value: absolute
-            path in container) of volumes to create. Default: ``None``
-        volumes_from (:obj:`list`, optional): A list of images whose volumes should be used
-            when starting the node. Default: ``None``
-        **container_configs: Additional parameters to pass to
-            :py:meth:`docker.client.containers.run`.
+        volumes (:obj:`list`, optional): A list of volumes to create for the node. Elements of the
+            list could be dictionaries of bind volumes (i.e. key: the absolute path on the host,
+            value: the absolute path in the container) or strings representing the names of
+            Docker images from which to get volumes. As an example,
+            ``[{'/var/www': '/var/www'}, 'my_super_secret_image']`` would create a bind mount of
+            ``/var/www`` on the host and use any volumes from ``my_super_secret_image``.
+            Default: ``None``
+        devices (:obj:`list`, optional): Devices on the host to expose to the node. Default:
+            ``None``
+        **create_container_kwargs: Any other keyword arguments to pass directly to
+            :py:meth:`docker.api.container.create_container`.
     """
-    DEFAULT_CONTAINER_CONFIGS = {
+    DEFAULT_CREATE_HOST_CONFIG_KWARGS = {
         # Add all capabilities to make containers host-like.
         'cap_add': ['ALL'],
-        # All nodes run in detached mode.
-        'detach': True,
         # Run without a seccomp profile.
         'security_opt': ['seccomp=unconfined'],
         # Expose all container ports to the host.
         'publish_all_ports': True,
-        # Ensure that a volume mount for /etc/localtime always exists.
-        'volumes': {'/etc/localtime': {'bind': '/etc/localtime'}},
+        # Mount in /etc/localtime to have container time match the host's.
+        'binds': {'/etc/localtime': {'bind': '/etc/localtime', 'mode': 'rw'}},
     }
 
-    def __init__(self, hostname, group, image,
-                 ports=None, volumes=None, volumes_from=None, **container_configs):
+    DEFAULT_CREATE_CONTAINER_KWARGS = {
+        # All nodes run in detached mode.
+        'detach': True,
+        # Mount in /etc/localtime to have container time match the host's.
+        'volumes': ['/etc/localtime']
+    }
+
+    def __init__(self, hostname, group, image, ports=None, volumes=None, devices=None,
+                 **create_container_kwargs):
         self.hostname = hostname
         self.group = group
+        self.image = image
 
-        self.container_configs = self._prepare_container_configs(**dict(image=image,
-                                                                        ports=ports or [],
-                                                                        volumes=volumes or {},
-                                                                        **container_configs))
-        self.volumes_from = volumes_from
+        self.ports = ports or []
+        self.volumes = volumes or []
+        self.devices = devices or []
+        self.create_container_kwargs = create_container_kwargs
 
     def start(self, network):
         """Start the node.
@@ -207,20 +211,104 @@ class Node:
         Args:
             network (:obj:`str`): Docker network to which to attach the container.
         """
-        self.container_configs.update(dict(hostname='{}.{}'.format(self.hostname, network)))
+        self.fqdn = '{}.{}'.format(self.hostname, network)
 
-        if self.volumes_from:
-            self.container_configs['volumes_from'] = [client.containers.create(image=image).id
-                                                      for image in self.volumes_from]
+        # Instantiate dictionaries for kwargs we'll pass when creating host configs
+        # and the node's container itself.
+        create_host_config_kwargs = dict(Node.DEFAULT_CREATE_HOST_CONFIG_KWARGS)
+        create_container_kwargs = dict(Node.DEFAULT_CREATE_CONTAINER_KWARGS,
+                                       **self.create_container_kwargs)
 
-        logger.debug('Container configs: %s.',
-                     '; '.join('{}="{}"'.format(k, v) for k, v in self.container_configs.items()))
-        logger.info('Starting node %s.%s ...',
-                    self.hostname,
-                    network)
-        self.container = client.containers.run(**self.container_configs)
-        client.networks.get(network).connect(container=self.container,
-                                             aliases=[self.hostname])
+        if self.volumes:
+            # Instantiate empty lists to which we'll append elements as we traverse through
+            # volumes. These populated lists will then get passed to either
+            # :py:meth:`docker.api.client.APIClient.create_host_config` or
+            # :py:meth:`docker.api.client.create_container`.
+            binds = []
+            volumes = []
+
+            volumes_from = []
+
+            for volume in self.volumes:
+                if isinstance(volume, dict):
+                    # Dictionaries in the volumes list are bind volumes.
+                    for host_directory, container_directory in volume.items():
+                        logger.debug('Adding volume (%s) to container config.',
+                                     '{}=>{}'.format(host_directory, container_directory))
+                        binds.append('{}:{}:rw'.format(host_directory, container_directory))
+                        volumes.append(container_directory)
+                elif isinstance(volume, str):
+                    # Strings in the volume list are `volumes_from` images.
+                    try:
+                        container = client.containers.create(volume)
+                    except docker.errors.ImageNotFound:
+                        logger.info('Could not find %s locally. Attempting to pull ...')
+                        client.images.pull(volume)
+                        container = client.containers.create(volume)
+                    volumes_from.append(container.id)
+                else:
+                    element_type = type(element).__name__
+                    raise TypeError('Saw volume of type {} (must be dict or str).'.format(element_type))
+
+            if volumes_from:
+                create_host_config_kwargs['volumes_from'] = volumes_from
+
+            if volumes:
+                create_host_config_kwargs['binds'] = binds
+                create_container_kwargs['volumes'] = volumes
+
+        host_config = client.api.create_host_config(**create_host_config_kwargs)
+
+        # Pass networking config to container at creation time to avoid issues with
+        # DNS resolution.
+        networking_config = client.api.create_networking_config({
+            network: client.api.create_endpoint_config(aliases=[self.hostname])
+        })
+
+        logger.info('Starting node %s ...', self.fqdn)
+        # Since we need to use the low-level API to handle networking properly, we need to get
+        # a container instance from the ID
+        container_id = client.api.create_container(image=self.image,
+                                                   hostname=self.fqdn,
+                                                   ports=self.ports,
+                                                   host_config=host_config,
+                                                   networking_config=networking_config,
+                                                   **create_container_kwargs)['Id']
+        client.api.start(container=container_id)
+
+        # When the Container instance is created, the corresponding Docker container may not
+        # be in a RUNNING state. Wait until it is (or until timeout takes place).
+        self.container = client.containers.get(container_id=container_id)
+
+        logger.debug('Connecting container (%s) to network (%s) ...', self.container.short_id, network)
+
+        # Wait for container to be in running state before moving on.
+        def condition(container):
+            container.reload()
+            outcome = nested_get(container.attrs, ['State', 'Running'])
+            logger.debug('Container running state evaluated to %s.', outcome)
+            return outcome
+        def success(time):
+            logger.debug('Container reached running state after %s seconds.', time)
+        def failure(timeout):
+            logger.debug('Timed out after %s seconds waiting for container to reach running state.',
+                         timeout)
+        timeout_in_secs = 30
+        wait_for_condition(condition=condition, condition_args=[self.container],
+                           timeout=30, success=success, failure=failure)
+
+        logger.debug('Reloading attributes for container (%s) ...', self.container.short_id)
+        self.container.reload()
+
+        self.host_ports = {int(container_port.split('/')[0]): int(host_ports[0]['HostPort'])
+                           for container_port, host_ports in nested_get(self.container.attrs,
+                                                                        ['NetworkSettings',
+                                                                         'Ports']).items()}
+        if self.host_ports:
+            logger.debug('Created host port mapping (%s) for node (%s).',
+                         '; '.join('{} => {}'.format(host_port, container_port)
+                                   for host_port, container_port in self.host_ports.items()),
+                         self.hostname)
 
     def execute(self, command, user='root', quiet=False):
         """Execute a command on the node.
@@ -231,35 +319,9 @@ class Node:
             quiet (:obj:`bool`, optional): Run the command without showing any stdout. Default:
                 ``False``
         """
-        logger.debug('Executing command (%s).', command)
+        logger.debug('Executing command (%s) on node (%s) ...', command, self.fqdn)
         for response_chunk in self.container.exec_run(command,
                                                       detach=quiet,
                                                       stream=True,
                                                       user=user):
             print(response_chunk.decode())
-
-    def _prepare_container_configs(self, **container_configs):
-        # Build up the container config dictionary which we used to populate kwargs
-        # for docker.client.containers.run.
-        configs = dict(Node.DEFAULT_CONTAINER_CONFIGS)
-        logger.debug('Container configs dictionary contains default values (%s).',
-                     ', '.join('{}={}'.format(key, value)
-                               for key, value in configs.items()))
-
-        configs['image'] = container_configs['image']
-        logger.debug('Added image (%s) to container config.', configs['image'])
-
-        # docker-py expects port bindings as a dictionary with container ports as keys and
-        # host ports as values (a host port of None tells it to select a random port).
-        if container_configs['ports']:
-            configs['ports'] = dict.fromkeys(container_configs['ports'], None)
-
-        volumes = {host_path: {'bind': container_path}
-                   for host_path, container_path in container_configs['volumes'].items()}
-        if volumes:
-            configs['volumes'].update(volumes)
-            logger.debug('Added volumes (%s) to container config.',
-                         ', '.join('{}=>{}'.format(key, value)
-                                   for key, value in volumes.items()))
-
-        return configs
