@@ -2,6 +2,11 @@
 History
 =======
 
+1.0.5 (2017-09-02)
+------------------
+
+* Add logic to pull missing images to clusterdock.models
+
 1.0.4 (2017-09-02)
 ------------------
 
