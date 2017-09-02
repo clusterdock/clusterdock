@@ -17,7 +17,7 @@ import logging
 
 __author__ = """Dima Spivak"""
 __email__ = 'dima@spivak.ch'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter('%(asctime)s %(name)-20s %(levelname)-8s %(message)s',
