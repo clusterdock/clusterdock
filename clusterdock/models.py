@@ -242,7 +242,7 @@ class Node:
                     try:
                         container = client.containers.create(volume)
                     except docker.errors.ImageNotFound:
-                        logger.info('Could not find %s locally. Attempting to pull ...')
+                        logger.info('Could not find %s locally. Attempting to pull ...', volume)
                         client.images.pull(volume)
                         container = client.containers.create(volume)
                     volumes_from.append(container.id)
@@ -268,12 +268,22 @@ class Node:
         logger.info('Starting node %s ...', self.fqdn)
         # Since we need to use the low-level API to handle networking properly, we need to get
         # a container instance from the ID
-        container_id = client.api.create_container(image=self.image,
-                                                   hostname=self.fqdn,
-                                                   ports=self.ports,
-                                                   host_config=host_config,
-                                                   networking_config=networking_config,
-                                                   **create_container_kwargs)['Id']
+        try:
+            container_id = client.api.create_container(image=self.image,
+                                                       hostname=self.fqdn,
+                                                       ports=self.ports,
+                                                       host_config=host_config,
+                                                       networking_config=networking_config,
+                                                       **create_container_kwargs)['Id']
+        except docker.errors.ImageNotFound:
+            logger.info('Could not find %s locally. Attempting to pull ...', self.image)
+            client.images.pull(self.image)
+            container_id = client.api.create_container(image=self.image,
+                                                       hostname=self.fqdn,
+                                                       ports=self.ports,
+                                                       host_config=host_config,
+                                                       networking_config=networking_config,
+                                                       **create_container_kwargs)['Id']
         client.api.start(container=container_id)
 
         # When the Container instance is created, the corresponding Docker container may not
