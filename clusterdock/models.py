@@ -71,17 +71,19 @@ class Cluster:
                 and IP address of the container. Default: ``True``
         """
         logger.info('Starting cluster on network (%s) ...', network)
-        the_network = self._setup_network(name=network)
+        self.network = network
+        the_network = self._setup_network(name=self.network)
 
         if len(the_network.containers) != 0:
-            # The network alias for a container is deeply nested in the container attributes.
-            # Store the hierarchy so we can use the nested_get utility from clusterdock.utils.
-            container_network_alias = ['NetworkSettings', 'Networks', network, 'Aliases', 0]
             containers_attached_to_network = [nested_get(container.attrs,
-                                                         container_network_alias)
+                                                         ['NetworkSettings',
+                                                          'Networks',
+                                                          self.network,
+                                                          'Aliases',
+                                                          0])
                                               for container in the_network.containers]
             logger.debug('Network (%s) currently has the followed containers attached: \n%s',
-                         network,
+                         self.network,
                          '\n'.join('- {}'.format(container)
                                    for container in containers_attached_to_network))
 
@@ -89,10 +91,10 @@ class Cluster:
                                                                             for node in self.nodes)
             if duplicate_hostnames:
                 raise DuplicateHostnamesError(duplicates=duplicate_hostnames,
-                                              network=network)
+                                              network=self.network)
 
         for node in self:
-            node.start(network)
+            node.start(self.network)
 
     def execute(self, command, **kwargs):
         """Execute a command on every :py:class:`clusterdock.models.Node` within the
