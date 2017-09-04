@@ -16,7 +16,10 @@ to bring up clusters.
 """
 
 import datetime
+import io
 import logging
+import tarfile
+import time
 
 import docker
 import requests
@@ -335,3 +338,38 @@ class Node:
                                                       stream=True,
                                                       user=user):
             print(response_chunk.decode())
+
+    def get_file(self, path):
+        """Get file from the node.
+
+        Args:
+            path (:obj:`str`): Absolute path to file.
+
+        Returns:
+            A :obj:`str` containing the contents of the file.
+        """
+        tarstream = io.BytesIO(self.container.get_archive(path=path)[0].read())
+        with tarfile.open(fileobj=tarstream) as tarfile_:
+            for tarinfo in tarfile_.getmembers():
+                return tarfile_.extractfile(tarinfo).read().decode()
+
+    def put_file(self, path, contents):
+        """Put file on the node.
+
+        Args:
+            path (:obj:`str`): Absolute path to file.
+            contents (:obj:`str`): The contents of the file.
+        """
+        data = io.BytesIO()
+        with tarfile.open(fileobj=data, mode='w') as tarfile_:
+            encoded_file = contents.encode()
+            tarinfo = tarfile.TarInfo(path)
+
+            # We set the modification time to now because some parts of SDC (e.g. logging) rely upon
+            # timestamps to determine whether to read config files.
+            tarinfo.mtime = time.time()
+            tarinfo.size = len(encoded_file)
+            tarfile_.addfile(tarinfo, io.BytesIO(encoded_file))
+        data.seek(0)
+
+        self.container.put_archive(path='/', data=data)
