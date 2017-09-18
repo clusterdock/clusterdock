@@ -2,6 +2,11 @@
 History
 =======
 
+1.0.7 (2017.09.18)
+------------------
+
+* Removed DEFAULT_NAMESPACE to let topologies define their own.
+
 1.0.6 (2017.09.04)
 ------------------
 
