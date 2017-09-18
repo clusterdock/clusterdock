@@ -10,7 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DEFAULT_NAMESPACE: clusterdock
 DEFAULT_NETWORK: cluster
 DEFAULT_OPERATING_SYSTEM: centos6.6
 DEFAULT_REGISTRY: docker.io

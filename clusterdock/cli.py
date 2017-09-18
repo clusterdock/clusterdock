@@ -77,7 +77,6 @@ def main():
                               action='store_true')
     start_parser.add_argument('--namespace',
                               help='Namespace to use when looking for images',
-                              default=defaults['DEFAULT_NAMESPACE'],
                               metavar='ns')
     start_parser.add_argument('--network',
                               help='Docker network to use',
