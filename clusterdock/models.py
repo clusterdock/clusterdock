@@ -315,6 +315,9 @@ class Node:
         logger.debug('Reloading attributes for container (%s) ...', self.container.short_id)
         self.container.reload()
 
+        self.ip_address = nested_get(self.container.attrs,
+                                     ['NetworkSettings', 'Networks', network, 'IPAddress'])
+
         self.host_ports = {int(container_port.split('/')[0]): int(host_ports[0]['HostPort'])
                            for container_port, host_ports in nested_get(self.container.attrs,
                                                                         ['NetworkSettings',
