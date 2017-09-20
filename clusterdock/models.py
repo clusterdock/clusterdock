@@ -339,10 +339,11 @@ class Node:
         """
         logger.debug('Executing command (%s) on node (%s) ...', command, self.fqdn)
         for response_chunk in self.container.exec_run(command,
-                                                      detach=quiet,
+                                                      detach=False,
                                                       stream=True,
                                                       user=user):
-            print(response_chunk.decode())
+            if not quiet:
+                print(response_chunk.decode())
 
     def get_file(self, path):
         """Get file from the node.
