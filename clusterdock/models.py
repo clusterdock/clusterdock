@@ -20,6 +20,7 @@ import io
 import logging
 import tarfile
 import time
+from collections import namedtuple
 
 import docker
 import requests
@@ -334,16 +335,24 @@ class Node:
         Args:
             command (:obj:`str`): Command to execute.
             user (:obj:`str`, optional): User with which to execute the command. Default: ``root``
-            quiet (:obj:`bool`, optional): Run the command without showing any stdout. Default:
+            quiet (:obj:`bool`, optional): Run the command without showing any output. Default:
                 ``False``
+
+        Returns:
+            A :py:class:`collections.namedtuple` instance with `exit_code` and `output` attributes.
         """
         logger.debug('Executing command (%s) on node (%s) ...', command, self.fqdn)
-        for response_chunk in self.container.exec_run(command,
-                                                      detach=False,
-                                                      stream=True,
-                                                      user=user):
+        exec_id = client.api.exec_create(self.container.id, command, user=user)['Id']
+
+        output = []
+        for response_chunk in client.api.exec_start(exec_id, stream=True):
+            output_chunk = response_chunk.decode()
+            output.append(output_chunk)
             if not quiet:
-                print(response_chunk.decode())
+                print(output_chunk)
+        exit_code = client.api.exec_inspect(exec_id).get('ExitCode')
+        return namedtuple('ExecuteSession', ['exit_code', 'output'])(exit_code=exit_code,
+                                                                     output=''.join(output))
 
     def get_file(self, path):
         """Get file from the node.
