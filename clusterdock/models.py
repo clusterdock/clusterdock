@@ -105,9 +105,12 @@ class Cluster:
             command (:obj:`str`): Command to execute.
             **kwargs: Additional keyword arguments to pass to
                 :py:meth:`clusterdock.models.Node.execute`.
+
+        Returns:
+            A :obj:`list` of :py:class:`collections.namedtuple` instances returned by
+                :py:meth:`clusterdock.models.Node.execute`.
         """
-        for node in self.nodes:
-            node.execute(command, **kwargs)
+        return [node.execute(command, **kwargs) for node in self.nodes]
 
     def __iter__(self):
         for node in self.nodes:
@@ -156,9 +159,12 @@ class NodeGroup:
             command (:obj:`str`): Command to execute.
             **kwargs: Additional keyword arguments to pass to
                 :py:meth:`clusterdock.models.Node.execute`.
+
+        Returns:
+            A :obj:`list` of :py:class:`collections.namedtuple` instances returned by
+                :py:meth:`clusterdock.models.Node.execute`.
         """
-        for node in self.nodes:
-            node.execute(command, **kwargs)
+        return [node.execute(command, **kwargs) for node in self.nodes]
 
 
 class Node:
