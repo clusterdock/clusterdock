@@ -2,6 +2,14 @@
 History
 =======
 
+1.1.0 (2017.09.21)
+------------------
+
+* Updated clusterdock.models.Node.execute to return a namedtuple with the
+command's exit code and output.
+* Added support for specifying host:container port mappings when creating a node.
+* Added ip_address attribute to clusterdock.models.Node.
+
 1.0.7 (2017.09.18)
 ------------------
 
