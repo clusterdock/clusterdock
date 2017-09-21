@@ -174,8 +174,10 @@ class Node:
         hostname (:obj:`str`): Hostname of the node.
         group (:obj:`str`): :py:obj:`clusterdock.models.NodeGroup` to which the node should belong.
         image (:obj:`str`): Docker image with which to start the container.
-        ports (:obj:`list`, optional): A list of container ports (integers) to expose to the host.
-            Default: ``None``
+        ports (:obj:`list`, optional): A list of container ports to expose to the host. Elements of
+            the list could be integers (in which case a random port on the host will be chosen by
+            the Docker daemon) or dictionaries (with the key being the host port and the value being
+            the container port). Default: ``None``
         volumes (:obj:`list`, optional): A list of volumes to create for the node. Elements of the
             list could be dictionaries of bind volumes (i.e. key: the absolute path on the host,
             value: the absolute path in the container) or strings representing the names of
@@ -193,8 +195,6 @@ class Node:
         'cap_add': ['ALL'],
         # Run without a seccomp profile.
         'security_opt': ['seccomp=unconfined'],
-        # Expose all container ports to the host.
-        'publish_all_ports': True,
         # Mount in /etc/localtime to have container time match the host's.
         'binds': {'/etc/localtime': {'bind': '/etc/localtime', 'mode': 'rw'}},
     }
@@ -245,7 +245,7 @@ class Node:
                 if isinstance(volume, dict):
                     # Dictionaries in the volumes list are bind volumes.
                     for host_directory, container_directory in volume.items():
-                        logger.debug('Adding volume (%s) to container config.',
+                        logger.debug('Adding volume (%s) to container config ...',
                                      '{}=>{}'.format(host_directory, container_directory))
                         binds.append('{}:{}:rw'.format(host_directory, container_directory))
                         volumes.append(container_directory)
@@ -269,6 +269,27 @@ class Node:
                 create_host_config_kwargs['binds'] = binds
                 create_container_kwargs['volumes'] = volumes
 
+        ports = []
+        port_bindings = {}
+        for port in self.ports:
+            if isinstance(port, dict):
+                for host_port, container_port in port.items():
+                    logger.debug('Adding binding from host port %s to container port %s ...',
+                                 host_port, container_port)
+                    ports.append(container_port)
+                    port_bindings[container_port] = host_port
+            elif isinstance(port, int):
+                ports.append(port)
+                port_bindings[port] = None
+            else:
+                element_type = type(element).__name__
+                raise TypeError('Saw port of type {} (must be dict or int).'.format(element_type))
+
+        if ports:
+            create_container_kwargs['ports'] = ports
+        if port_bindings:
+            create_host_config_kwargs['port_bindings'] = port_bindings
+
         host_config = client.api.create_host_config(**create_host_config_kwargs)
 
         # Pass networking config to container at creation time to avoid issues with
@@ -283,7 +304,6 @@ class Node:
         try:
             container_id = client.api.create_container(image=self.image,
                                                        hostname=self.fqdn,
-                                                       ports=self.ports,
                                                        host_config=host_config,
                                                        networking_config=networking_config,
                                                        **create_container_kwargs)['Id']
@@ -292,7 +312,6 @@ class Node:
             client.images.pull(self.image)
             container_id = client.api.create_container(image=self.image,
                                                        hostname=self.fqdn,
-                                                       ports=self.ports,
                                                        host_config=host_config,
                                                        networking_config=networking_config,
                                                        **create_container_kwargs)['Id']
