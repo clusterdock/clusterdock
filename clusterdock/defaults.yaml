@@ -11,6 +11,5 @@
 # limitations under the License.
 
 DEFAULT_NETWORK: cluster
-DEFAULT_OPERATING_SYSTEM: centos6.6
 DEFAULT_REGISTRY: docker.io
 DEFAULT_TOPOLOGY_DEFINITION_FILENAME: topology.yaml

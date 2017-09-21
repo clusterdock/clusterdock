@@ -84,7 +84,6 @@ def main():
                               metavar='nw')
     start_parser.add_argument('-o', '--operating-system',
                               help='Operating system to use for cluster nodes',
-                              default=defaults['DEFAULT_OPERATING_SYSTEM'],
                               metavar='sys')
     start_parser.add_argument('-r', '--registry',
                               help='Docker Registry from which to pull images',
