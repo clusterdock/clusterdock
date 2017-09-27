@@ -20,7 +20,7 @@ import io
 import logging
 import tarfile
 import time
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 
 import docker
 import requests
@@ -107,10 +107,11 @@ class Cluster:
                 :py:meth:`clusterdock.models.Node.execute`.
 
         Returns:
-            A :obj:`list` of :py:class:`collections.namedtuple` instances returned by
+            A :py:class:`collections.OrderedDict` of :obj:`str` instances (the FQDN of the node)
+                mapping to the :py:class:`collections.namedtuple` instances returned by
                 :py:meth:`clusterdock.models.Node.execute`.
         """
-        return [node.execute(command, **kwargs) for node in self.nodes]
+        return OrderedDict((node.fqdn, node.execute(command, **kwargs)) for node in self.nodes)
 
     def __iter__(self):
         for node in self.nodes:
@@ -161,10 +162,11 @@ class NodeGroup:
                 :py:meth:`clusterdock.models.Node.execute`.
 
         Returns:
-            A :obj:`list` of :py:class:`collections.namedtuple` instances returned by
+            A :py:class:`collections.OrderedDict` of :obj:`str` instances (the FQDN of the node)
+                mapping to the :py:class:`collections.namedtuple` instances returned by
                 :py:meth:`clusterdock.models.Node.execute`.
         """
-        return [node.execute(command, **kwargs) for node in self.nodes]
+        return OrderedDict((node.fqdn, node.execute(command, **kwargs)) for node in self.nodes)
 
 
 class Node:
