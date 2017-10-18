@@ -16,7 +16,7 @@ Special thanks
 Contributors
 ------------
 
-None yet. Why not be the first?
+- `Kirti Velankar <https://github.com/kirtiv1>`_.
 
 Other credits
 -------------
