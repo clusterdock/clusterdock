@@ -292,6 +292,9 @@ class Node:
         if port_bindings:
             create_host_config_kwargs['port_bindings'] = port_bindings
 
+        if self.devices:
+            create_host_config_kwargs['devices'] = self.devices
+
         host_config = client.api.create_host_config(**create_host_config_kwargs)
 
         # Pass networking config to container at creation time to avoid issues with
