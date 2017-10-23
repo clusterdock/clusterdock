@@ -2,6 +2,13 @@
 History
 =======
 
+1.2.0 (2017.10.23)
+------------------
+
+* Changed return type of :py:meth:`clusterdock.models.Cluster.execute`
+  and :py:meth:`clusterdock.models.NodeGroup.execute`.
+* Added support for node devices.
+
 1.1.0 (2017.09.21)
 ------------------
 
