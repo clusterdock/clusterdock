@@ -129,6 +129,8 @@ class Cluster:
                 logger.warning('Network (%s) already exists. Continuing without creating ...',
                                name)
                 network = client.networks.get(name)
+            else:
+                raise
         return network
 
 
