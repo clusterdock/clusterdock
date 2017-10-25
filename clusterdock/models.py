@@ -124,8 +124,7 @@ class Cluster:
                                              check_duplicate=True)
             logger.debug('Successfully created network (%s).', name)
         except docker.errors.APIError as api_error:
-            if (api_error.status_code == requests.codes.server_error and
-                    api_error.explanation == 'network with name {} already exists'.format(name)):
+            if api_error.explanation == 'network with name {} already exists'.format(name):
                 logger.warning('Network (%s) already exists. Continuing without creating ...',
                                name)
                 network = client.networks.get(name)
