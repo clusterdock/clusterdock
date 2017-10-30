@@ -220,6 +220,8 @@ class Node:
         self.devices = devices or []
         self.create_container_kwargs = create_container_kwargs
 
+        self.execute_shell = '/bin/sh'
+
     def start(self, network):
         """Start the node.
 
@@ -373,7 +375,9 @@ class Node:
             A :py:class:`collections.namedtuple` instance with `exit_code` and `output` attributes.
         """
         logger.debug('Executing command (%s) on node (%s) ...', command, self.fqdn)
-        exec_id = client.api.exec_create(self.container.id, command, user=user)['Id']
+        exec_command = [self.execute_shell, '-c', command]
+        logger.debug('Running docker exec with command (%s) ...', exec_command)
+        exec_id = client.api.exec_create(self.container.id, exec_command, user=user)['Id']
 
         output = []
         for response_chunk in client.api.exec_start(exec_id, stream=True):
