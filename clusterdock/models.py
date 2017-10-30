@@ -241,7 +241,7 @@ class Node:
             # volumes. These populated lists will then get passed to either
             # :py:meth:`docker.api.client.APIClient.create_host_config` or
             # :py:meth:`docker.api.client.create_container`.
-            binds = []
+            binds = {}
             volumes = []
 
             volumes_from = []
@@ -251,8 +251,8 @@ class Node:
                     # Dictionaries in the volumes list are bind volumes.
                     for host_directory, container_directory in volume.items():
                         logger.debug('Adding volume (%s) to container config ...',
-                                     '{}=>{}'.format(host_directory, container_directory))
-                        binds.append('{}:{}:rw'.format(host_directory, container_directory))
+                                     '{} => {}'.format(host_directory, container_directory))
+                        binds[host_directory] = dict(bind=container_directory, mode='rw')
                         volumes.append(container_directory)
                 elif isinstance(volume, str):
                     # Strings in the volume list are `volumes_from` images.
@@ -271,8 +271,8 @@ class Node:
                 create_host_config_kwargs['volumes_from'] = volumes_from
 
             if volumes:
-                create_host_config_kwargs['binds'] = binds
-                create_container_kwargs['volumes'] = volumes
+                create_host_config_kwargs['binds'].update(binds)
+                create_container_kwargs['volumes'] += volumes
 
         ports = []
         port_bindings = {}
