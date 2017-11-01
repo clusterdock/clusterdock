@@ -2,6 +2,14 @@
 History
 =======
 
+1.3.0 (2017.11.01)
+------------------
+
+* Fixed handling of duplicate networks.
+* Made :py:meth:`clusterdock.models.Node.execute` run commands in a shell
+  (using ``/bin/sh`` by default).
+* Fixed handling of volumes passed to :py:class:`clusterdock.models.Node`.
+
 1.2.0 (2017.10.23)
 ------------------
 
