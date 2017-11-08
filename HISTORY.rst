@@ -2,6 +2,11 @@
 History
 =======
 
+1.3.1 (2017.11.07)
+------------------
+
+* Fixed broken fix of volume handling from previous release.
+
 1.3.0 (2017.11.01)
 ------------------
 
