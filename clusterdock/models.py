@@ -15,6 +15,7 @@
 to bring up clusters.
 """
 
+import copy
 import datetime
 import io
 import logging
@@ -232,9 +233,9 @@ class Node:
 
         # Instantiate dictionaries for kwargs we'll pass when creating host configs
         # and the node's container itself.
-        create_host_config_kwargs = dict(Node.DEFAULT_CREATE_HOST_CONFIG_KWARGS)
-        create_container_kwargs = dict(Node.DEFAULT_CREATE_CONTAINER_KWARGS,
-                                       **self.create_container_kwargs)
+        create_host_config_kwargs = copy.deepcopy(Node.DEFAULT_CREATE_HOST_CONFIG_KWARGS)
+        create_container_kwargs = copy.deepcopy(dict(Node.DEFAULT_CREATE_CONTAINER_KWARGS,
+                                                **self.create_container_kwargs))
 
         if self.volumes:
             # Instantiate empty lists to which we'll append elements as we traverse through
