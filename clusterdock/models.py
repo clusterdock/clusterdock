@@ -363,13 +363,15 @@ class Node:
                                    for host_port, container_port in self.host_ports.items()),
                          self.hostname)
 
-    def execute(self, command, user='root', quiet=False):
+    def execute(self, command, user='root', quiet=False, detach=False):
         """Execute a command on the node.
 
         Args:
             command (:obj:`str`): Command to execute.
             user (:obj:`str`, optional): User with which to execute the command. Default: ``root``
             quiet (:obj:`bool`, optional): Run the command without showing any output. Default:
+                ``False``
+            detach (:obj:`bool`, optional): Run the command in detached mode. Default:
                 ``False``
 
         Returns:
@@ -381,7 +383,7 @@ class Node:
         exec_id = client.api.exec_create(self.container.id, exec_command, user=user)['Id']
 
         output = []
-        for response_chunk in client.api.exec_start(exec_id, stream=True):
+        for response_chunk in client.api.exec_start(exec_id, stream=True, detach=detach):
             output_chunk = response_chunk.decode()
             output.append(output_chunk)
             if not quiet:
