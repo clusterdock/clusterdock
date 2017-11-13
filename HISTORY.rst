@@ -2,6 +2,11 @@
 History
 =======
 
+1.3.2 (2017.11.13)
+------------------
+
+* Added support for executing commands in detached mode.
+
 1.3.1 (2017.11.07)
 ------------------
 
