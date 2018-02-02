@@ -60,3 +60,32 @@ target/
 
 # pyenv python configuration file
 .python-version
+# OS X
+.DS_Store
+
+# vim
+*.swp
+
+__status__
+
+# 3.6 Virtual env stuff
+bin/
+include/
+share/
+*.egg-info
+pip-selfcheck.json
+pyvenv.cfg
+
+# Caching
+__pycache__
+
+
+pip-delete-*
+
+# Unit tests / coverage reports
+
+
+# Django
+
+
+# Pybuilder
