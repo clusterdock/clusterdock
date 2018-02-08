@@ -23,7 +23,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'docker',
+    'docker==2.7.0',
     'PyYAML',
     'python-dateutil',
     'requests'
