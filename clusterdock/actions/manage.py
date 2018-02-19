@@ -26,12 +26,13 @@ def main(args):
 
     if args.manage_action == 'nuke':
         if client.containers.list():
-            logger.info('Stopping and removing all containers ...')
+            logger.info('Stopping and removing all Clusterdock-initiated containers ...')
             for container in client.containers.list(all=True):
-                logger.debug('Removing container %s ...',
-                             container.id)
-                if not args.dry_run:
-                    container.remove(v=True, force=True)
+                if any('clusterdock' in n for n in container.image.attrs['RepoTags']):
+                    logger.debug('Removing container %s ...',
+                                 container.id)
+                    if not args.dry_run:
+                        container.remove(v=True, force=True)
         else:
             logger.warning("Didn't find any containers to remove. Continuing ...")
 
