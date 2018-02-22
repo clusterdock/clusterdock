@@ -363,6 +363,8 @@ class Node:
                                    for host_port, container_port in self.host_ports.items()),
                          self.hostname)
 
+        self._add_node_to_etc_hosts()
+
     def execute(self, command, user='root', quiet=False, detach=False):
         """Execute a command on the node.
 
@@ -426,3 +428,18 @@ class Node:
         data.seek(0)
 
         self.container.put_archive(path='/', data=data)
+
+    def _add_node_to_etc_hosts(self):
+        """Add node information to the Docker hosts' /etc/hosts file, exploiting Docker's
+        permissions to do so without needing an explicit sudo.
+        """
+        image = 'alpine:latest'
+        command = 'echo "{} {}  # clusterdock" >> /etc/hosts'.format(self.ip_address,
+                                                                        self.fqdn)
+        volumes = {'/etc/hosts': {'bind': '/etc/hosts', 'mode': 'rw'}}
+
+        logger.debug('Adding %s to /etc/hosts ...', self.fqdn)
+        client.containers.run(image=image,
+                              command=[self.execute_shell, '-c', command],
+                              volumes=volumes,
+                              remove=True)
