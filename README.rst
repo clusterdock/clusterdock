@@ -62,7 +62,7 @@ To SSH into a node and look around:
     drwxr-xr-x   2 root root 4096 Sep 23  2011 mnt
     [root@node-1 ~]# exit
 
-To see the complete usage message for the topology:
+To see full usage instructions for the ``start`` action, use ``-h``/``--help``:
 
 .. code-block:: console
 
@@ -106,3 +106,29 @@ When you're done and want to clean up:
     $ clusterdock manage nuke
     2017-08-03 10:06:28 PM clusterdock.actions.manage INFO     Stopping and removing all containers ...
     2017-08-03 10:06:30 PM clusterdock.actions.manage INFO     Removing all user-defined networks ...
+
+To see full usage instructions for the ``build`` action, use ``-h``/``--help``:
+
+.. code-block:: console
+
+    $ clusterdock build topology_nodebase -h
+    usage: clusterdock build [--namespace ns] [--network nw] [-o sys] [-r url]
+                             [-h]
+                             topology
+
+    Build images for the nodebase topology
+
+    positional arguments:
+      topology              A clusterdock topology directory
+
+    optional arguments:
+      --namespace ns        Namespace to use when looking for images (default:
+                            None)
+      --network nw          Docker network to use (default: cluster)
+      -o sys, --operating-system sys
+                            Operating system to use for cluster nodes (default:
+                            None)
+      -r url, --registry url
+                            Docker Registry from which to pull images (default:
+                            docker.io)
+      -h, --help            show this help message and exit
