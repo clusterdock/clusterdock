@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+colorlog
 docker==2.4.2
 PyYAML==3.12
 pytest==3.1.2
