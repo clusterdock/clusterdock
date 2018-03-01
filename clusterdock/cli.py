@@ -56,7 +56,6 @@ def main():
     build_parser = action_subparsers.add_parser('build',
                                                 formatter_class=FORMATTER_CLASS,
                                                 add_help=False)
-                              metavar='repo')
     build_parser.add_argument('--network',
                               help='Docker network to use',
                               default=defaults['DEFAULT_NETWORK'],
@@ -199,6 +198,10 @@ def main():
     args = parser.parse_args()
     logger.debug('Parsed args (%s).',
                  '; '.join('{}="{}"'.format(k, v) for k, v in vars(args).items()))
+
+    if not args.action:
+        parser.print_help()
+        parser.exit()
 
     action = importlib.import_module('clusterdock.actions.{}'.format(args.action))
     action.main(args)
