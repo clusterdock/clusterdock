@@ -366,7 +366,7 @@ class Node:
         self._add_node_to_etc_hosts()
 
     def stop(self, remove=True):
-        """Stop the node by removing the Docker container.
+        """Stop the node and optionally removing the Docker container.
 
         Args:
             remove (:obj:`bool`, optional): Remove underlying Docker container. Default: ``True``

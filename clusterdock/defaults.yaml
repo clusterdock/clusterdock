@@ -12,4 +12,5 @@
 
 DEFAULT_NETWORK: cluster
 DEFAULT_REGISTRY: docker.io
+DEFAULT_REPOSITORY: docker.io/clusterdock
 DEFAULT_TOPOLOGY_DEFINITION_FILENAME: topology.yaml

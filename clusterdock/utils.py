@@ -97,7 +97,7 @@ def join_url_parts(*parts):
     return '/'.join([piece.strip('/') for piece in parts])
 
 
-def version_tuple(version, default=None):
+def version_tuple(version):
     """
     Convert a version string or tuple to a tuple.
     Will return (major, minor, release) kind of format.
@@ -106,11 +106,9 @@ def version_tuple(version, default=None):
         return tuple(int(x) for x in version.split('.'))
     elif isinstance(version, tuple):
         return version
-    else:
-        return default
 
 
-def version_str(version, default=None):
+def version_str(version):
     """
     Convert a version tuple or string to a string.
     Will return major.minor.release kind of format.
@@ -119,5 +117,3 @@ def version_str(version, default=None):
         return version
     elif isinstance(version, tuple):
         return '.'.join([str(int(x)) for x in version])
-    else:
-        return default
