@@ -56,6 +56,19 @@ def main():
     build_parser = action_subparsers.add_parser('build',
                                                 formatter_class=FORMATTER_CLASS,
                                                 add_help=False)
+                              metavar='repo')
+    build_parser.add_argument('--network',
+                              help='Docker network to use',
+                              default=defaults['DEFAULT_NETWORK'],
+                              metavar='nw')
+    build_parser.add_argument('-o', '--operating-system',
+                              help='Operating system to use for cluster nodes',
+                              metavar='sys')
+    build_parser.add_argument('--repository',
+                              help='Docker repository to use for committing images',
+                              default=defaults['DEFAULT_REPOSITORY'],
+                              metavar='repo')
+
     build_parser.add_argument('topology',
                               help='A clusterdock topology directory')
 
@@ -167,19 +180,8 @@ def main():
     logger.debug('Parsed args (%s).',
                  '; '.join('{}="{}"'.format(k, v) for k, v in vars(args).items()))
 
-    if hasattr(args, 'topology'):
-        sys.path.append(os.path.dirname(os.path.realpath(args.topology)))
-        logger.debug('PYTHONPATH: %s', sys.path)
-        action = importlib.import_module('{}.{}'.format(topology, args.action))
-        start_cluster_start_time = datetime.datetime.now()
-        action.main(args)
-        start_cluster_delta = relativedelta(datetime.datetime.now(), start_cluster_start_time)
-        logger.info('Cluster started successfully (total time: %sm %ss).',
-                    start_cluster_delta.minutes,
-                    start_cluster_delta.seconds)
-    else:
-        action = importlib.import_module('clusterdock.actions.{}'.format(args.action))
-        action.main(args)
+    action = importlib.import_module('clusterdock.actions.{}'.format(args.action))
+    action.main(args)
 
 
 def _add_topology_action_args(parser, action, topology_configs):

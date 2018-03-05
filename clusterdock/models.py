@@ -365,6 +365,17 @@ class Node:
 
         self._add_node_to_etc_hosts()
 
+    def stop(self, remove=True):
+        """Stop the node and optionally removing the Docker container.
+
+        Args:
+            remove (:obj:`bool`, optional): Remove underlying Docker container. Default: ``True``
+        """
+        if not remove:
+            self.container.stop()
+        else:
+            self.container.remove(v=True, force=True)
+
     def execute(self, command, user='root', quiet=False, detach=False):
         """Execute a command on the node.
 
@@ -428,6 +439,27 @@ class Node:
         data.seek(0)
 
         self.container.put_archive(path='/', data=data)
+
+    def commit(self, repository, tag=None, push=False, **kwargs):
+        """Commit the Node's Docker container to a Docker image.
+
+        Args:
+            repository (:obj:`str`): The Docker repository to commit the image to.
+            tag (:obj:`str`, optional): Docker image tag. Default: ``None``
+            push (:obj:`bool`, optional): Push the image to Docker repository. Default: ``False``
+            **kwargs: Additional keyword arguments to pass to
+                :py:meth:`docker.models.Containers.Container.commit`
+        """
+        logger.debug('Committing `%s` with container id %s ...', self.fqdn, self.container.short_id)
+        image = self.container.commit(repository=repository, tag=tag, **kwargs)
+        logger.debug('%s repo tags committed with image id as %s', image.tags, image.short_id)
+        if push:
+            logger.debug('Pushing image of `%s` to repository %s ...', self.fqdn, repository)
+            for line in client.api.push(repository, tag, stream=True, decode=True):
+                line.pop('progressDetail', None) # take out too much detail
+                logger.debug(line)
+            logger.debug('%s repo tags pushed for `%s`, whose image id is %s',
+                         image.tags, self.fqdn, image.short_id)
 
     def _add_node_to_etc_hosts(self):
         """Add node information to the Docker hosts' /etc/hosts file, exploiting Docker's

@@ -95,3 +95,25 @@ def join_url_parts(*parts):
     examples of why urllib.parse.urljoin is insufficient for what we want to do.
     """
     return '/'.join([piece.strip('/') for piece in parts])
+
+
+def version_tuple(version):
+    """
+    Convert a version string or tuple to a tuple.
+    Will return (major, minor, release) kind of format.
+    """
+    if isinstance(version, str):
+        return tuple(int(x) for x in version.split('.'))
+    elif isinstance(version, tuple):
+        return version
+
+
+def version_str(version):
+    """
+    Convert a version tuple or string to a string.
+    Will return major.minor.release kind of format.
+    """
+    if isinstance(version, str):
+        return version
+    elif isinstance(version, tuple):
+        return '.'.join([str(int(x)) for x in version])
