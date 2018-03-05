@@ -18,16 +18,19 @@ to bring up clusters.
 import copy
 import datetime
 import io
+import json
 import logging
 import tarfile
 import time
 from collections import OrderedDict, namedtuple
+from pkg_resources import get_distribution
 
 import docker
 import requests
 
+from .config import defaults
 from .exceptions import DuplicateHostnamesError
-from .utils import nested_get, wait_for_condition
+from .utils import generate_cluster_name, nested_get, wait_for_condition
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,7 @@ class Cluster:
     """
 
     def __init__(self, *nodes):
+        self.name = generate_cluster_name()
         self.nodes = nodes
         self.node_groups = {}
 
@@ -72,7 +76,7 @@ class Cluster:
             update_etc_hosts (:obj:`bool`): Update the /etc/hosts file on the host with the hostname
                 and IP address of the container. Default: ``True``
         """
-        logger.info('Starting cluster on network (%s) ...', network)
+        logger.info('Starting %s cluster on network (%s) ...', self.name, network)
         self.network = network
         the_network = self._setup_network(name=self.network)
 
@@ -96,7 +100,7 @@ class Cluster:
                                               network=self.network)
 
         for node in self:
-            node.start(self.network)
+            node.start(self.network, cluster_name=self.name)
 
     def execute(self, command, **kwargs):
         """Execute a command on every :py:class:`clusterdock.models.Node` within the
@@ -120,9 +124,11 @@ class Cluster:
 
     def _setup_network(self, name):
         try:
+            labels = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'): _get_clusterdock_label(self.name)}
             network = client.networks.create(name=name,
                                              driver=DEFAULT_NETWORK_TYPE,
-                                             check_duplicate=True)
+                                             check_duplicate=True,
+                                             labels=labels)
             logger.debug('Successfully created network (%s).', name)
         except docker.errors.APIError as api_error:
             if api_error.explanation == 'network with name {} already exists'.format(name):
@@ -223,7 +229,7 @@ class Node:
 
         self.execute_shell = '/bin/sh'
 
-    def start(self, network):
+    def start(self, network, cluster_name=None):
         """Start the node.
 
         Args:
@@ -266,7 +272,8 @@ class Node:
                     volumes_from.append(container.id)
                 else:
                     element_type = type(element).__name__
-                    raise TypeError('Saw volume of type {} (must be dict or str).'.format(element_type))
+                    raise TypeError('Saw volume of type {} '
+                                    '(must be dict or str).'.format(element_type))
 
             if volumes_from:
                 create_host_config_kwargs['volumes_from'] = volumes_from
@@ -307,6 +314,9 @@ class Node:
             network: client.api.create_endpoint_config(aliases=[self.hostname])
         })
 
+        create_container_kwargs['labels'] = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'):
+                                             _get_clusterdock_label(cluster_name)}
+
         logger.info('Starting node %s ...', self.fqdn)
         # Since we need to use the low-level API to handle networking properly, we need to get
         # a container instance from the ID
@@ -330,7 +340,8 @@ class Node:
         # be in a RUNNING state. Wait until it is (or until timeout takes place).
         self.container = client.containers.get(container_id=container_id)
 
-        logger.debug('Connecting container (%s) to network (%s) ...', self.container.short_id, network)
+        logger.debug('Connecting container (%s) to network (%s) ...',
+                     self.container.short_id, network)
 
         # Wait for container to be in running state before moving on.
         def condition(container):
@@ -475,3 +486,17 @@ class Node:
                               command=[self.execute_shell, '-c', command],
                               volumes=volumes,
                               remove=True)
+
+
+def _get_clusterdock_label(cluster_name=None):
+    label_str = ''
+    try:
+        package = get_distribution('clusterdock')
+        label_info = {'name': package.project_name, 'version': package.version,
+                      'location': package.location}
+        if cluster_name:
+            label_info['cluster_name'] = cluster_name
+        label_str = json.dumps(label_info)
+    except:
+        pass
+    return label_str

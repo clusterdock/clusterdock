@@ -87,6 +87,11 @@ def main():
                                              formatter_class=FORMATTER_CLASS,
                                              add_help=False)
 
+    ps_parser = action_subparsers.add_parser('ps',
+                                             description=('List Clusterdock containers'),
+                                             formatter_class=FORMATTER_CLASS,
+                                             add_help=False)
+
     start_parser = action_subparsers.add_parser('start',
                                                 formatter_class=FORMATTER_CLASS,
                                                 add_help=False)
@@ -129,13 +134,10 @@ def main():
                                help="Don't actually perform manage actions")
     manage_subparsers = manage_parser.add_subparsers(dest='manage_action')
     manage_subparsers.required = True
-    manage_subparsers.add_parser('nuke')
 
-    remove_parser = manage_subparsers.add_parser('remove')
-    remove_parser.add_argument('-n', '--network',
-                               help='Network to remove (including all attached containers)',
-                               metavar='ntwrk',
-                               nargs='+')
+    nuke_parser = manage_subparsers.add_parser('nuke')
+    nuke_parser.add_argument('cluster_name', nargs='?',
+                             help='The nodes of cluster to nuke')
 
     # SSH parser
     # ~~~~~~~~~~
@@ -144,7 +146,7 @@ def main():
                             help='FQDN of cluster node to which to connect')
 
     # Copy parser
-    # ~~~~~~~~~~
+    # ~~~~~~~~~~~
     _add_help(cp_parser)
     cp_parser.add_argument('-a', '--archive', action='store_true',
                            help='Archive mode (copy all uid/gid information)')
@@ -156,6 +158,10 @@ def main():
     cp_parser.add_argument('destination',
                            help=('Local or Node destination file system path. '
                                  'E.g. DEST_PATH or Node FQDN:DEST_PATH'))
+
+    # ps parser
+    # ~~~~~~~~~
+    _add_help(ps_parser)
 
     if hasattr(args, 'topology'):
         topology = os.path.basename(os.path.realpath(args.topology))
