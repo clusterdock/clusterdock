@@ -20,11 +20,18 @@ import os
 import random
 import socket
 import subprocess
+from collections import namedtuple
 from functools import reduce
 from pkg_resources import get_distribution
 from time import sleep, time
 
+import docker
+
+from .config import defaults
+
 logger = logging.getLogger(__name__)
+
+client = docker.from_env()
 
 
 def nested_get(dict_, keys):
@@ -127,7 +134,7 @@ def version_str(version):
 def get_clusterdock_label(cluster_name=None):
     """
     Generate a clusterdock meta data label in json format. Meta data such as: clusterdock
-    package name, version, location of clusterdock install -etc.
+    package name, version, location of clusterdock install, etc.
 
         Args:
             cluster_name (:obj:`str`, optional): Cluster name to attach to meta data label.
@@ -200,3 +207,19 @@ def print_topology_meta(topology_name, quiet=False):
             logger.info('%s has Git hash %s', topology_name, out)
     except:
         pass
+
+
+def get_containers(label_check):
+    Container = namedtuple('Container', ['cluster_name', 'container'])
+    label_key = defaults['DEFAULT_DOCKER_LABEL_KEY']
+    cluster_containers = []
+    if client.containers.list():
+        for container in client.containers.list(all=True):
+            if not label_check:
+                cluster_containers.append(Container(None, container))
+            else:
+                labels = nested_get(container.attrs, ['Config', 'Labels'])
+                if label_key in labels:
+                    label = json.loads(labels[label_key])
+                    cluster_containers.append(Container(label['cluster_name'], container))
+    return cluster_containers

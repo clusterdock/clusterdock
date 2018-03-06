@@ -28,8 +28,9 @@ import docker
 import requests
 
 from .config import defaults
-from .exceptions import DuplicateHostnamesError
-from .utils import generate_cluster_name, get_clusterdock_label, nested_get, wait_for_condition
+from .exceptions import DuplicateClusterNameError, DuplicateHostnamesError
+from .utils import (get_containers, generate_cluster_name, get_clusterdock_label,
+                    nested_get, wait_for_condition)
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +45,20 @@ class Cluster:
 
     Args:
         *nodes: One or more :py:obj:`clusterdock.models.Node` instances.
+        name (:obj:`str`, optional): Cluster name to use. Default: :py:func:`generate_cluster_name`
     """
 
-    def __init__(self, *nodes):
-        self.name = generate_cluster_name()
+    def __init__(self, *nodes, name=None):
+        if name:
+            clusters = [container.cluster_name
+                             for container in get_containers(label_check=True)]
+            if name in clusters:
+                raise DuplicateClusterNameError(name=name, clusters=set(clusters))
+            else:
+                self.name = name
+        else:
+            self.name = generate_cluster_name()
+
         self.nodes = nodes
         self.node_groups = {}
 

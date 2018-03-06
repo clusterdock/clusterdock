@@ -16,8 +16,7 @@ import logging
 
 import docker
 
-from ..config import defaults
-from ..utils import nested_get
+from ..utils import get_containers, nested_get
 
 logger = logging.getLogger(__name__)
 
@@ -28,43 +27,27 @@ def main(args):
     if args.dry_run:
         logger.warning('All manage actions will be done in dry-run mode.')
 
-    label_key = defaults.get('DEFAULT_DOCKER_LABEL_KEY')
     if args.manage_action == 'nuke':
         logger.info('Stopping and removing %s containers ...',
                     ('all' if args.all else 'clusterdock'))
-        containers_tup = (_get_containers(label_check=False)
-                          if args.all else _get_containers(label_check=True))
-        _nuke_containers_and_networks(containers_tup, args.dry_run, nuke_networks=True)
+        cluster_containers = (get_containers(label_check=False)
+                              if args.all else get_containers(label_check=True))
+        _nuke_containers_and_networks(cluster_containers, args.dry_run, nuke_networks=True)
     if args.manage_action == 'remove':
-        logger.info('Stopping and removing containers from cluster(s) %s ...',
-                    args.cluster_names)
-        containers_tup = [container_tup for container_tup in _get_containers(label_check=True)
-                          if container_tup[1] in args.cluster_names]
-        _nuke_containers_and_networks(containers_tup, args.dry_run, remove_network=args.network)
+        logger.info('Stopping and removing containers from cluster(s) %s ...', args.clusters)
+        cluster_containers = [cluster_container
+                              for cluster_container in get_containers(label_check=True)
+                              if cluster_container.cluster_name in args.clusters]
+        _nuke_containers_and_networks(cluster_containers, args.dry_run, remove_network=args.network)
 
 
-def _get_containers(label_check):
-    label_key = defaults['DEFAULT_DOCKER_LABEL_KEY']
-    containers_tuple = []
-    if client.containers.list():
-        for container in client.containers.list(all=True):
-            if not label_check:
-                containers_tuple.append((container, None))
-            else:
-                labels = nested_get(container.attrs, ['Config', 'Labels'])
-                if label_key in labels:
-                    label = json.loads(labels[label_key])
-                    containers_tuple.append((container, label['cluster_name']))
-    return containers_tuple
-
-
-def _nuke_containers_and_networks(containers_tup, dry_run,
+def _nuke_containers_and_networks(cluster_containers, dry_run,
                                   nuke_networks=False, remove_network=False):
     removed_containers = []
     containers_networks = []
-    for container_tup in containers_tup:
-        container = container_tup[0]
-        cluster_name = container_tup[1]
+    for cluster_container in cluster_containers:
+        container = cluster_container.container
+        cluster_name = cluster_container.cluster_name
         if remove_network:
             containers_networks.extend(list(nested_get(container.attrs,
                                                        ['NetworkSettings', 'Networks']).keys()))
