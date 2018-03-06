@@ -28,11 +28,11 @@ is a swell project, if I may say so myself.
 ==================================
 
 Before doing anything, install a recent version of `Docker`_ to your machine and install
-Clusterdock as:
+clusterdock:
 
 .. code-block:: console
 
-    $ pip install clusterdock
+    $ pip3 install clusterdock
 
 Next, clone a clusterdock topology to your machine. For this example, we'll use the
 `nodebase topology`_. You could start a 2-node cluster:

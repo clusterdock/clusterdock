@@ -125,8 +125,16 @@ def main():
     manage_subparsers.required = True
 
     nuke_parser = manage_subparsers.add_parser('nuke')
-    nuke_parser.add_argument('cluster_name', nargs='?',
-                             help='The nodes of cluster to nuke')
+    nuke_parser.add_argument('-a', '--all',
+                             help='Nuke all containers',
+                             action='store_true')
+
+    remove_parser = manage_subparsers.add_parser('remove')
+    remove_parser.add_argument('-n', '--network',
+                               help='Remove Docker network',
+                               action='store_true')
+    remove_parser.add_argument('cluster_names', nargs='+', metavar='cluster',
+                               help='The nodes of cluster to remove')
 
     # SSH parser
     # ~~~~~~~~~~
