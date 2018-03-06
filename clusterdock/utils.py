@@ -126,15 +126,15 @@ def version_str(version):
 
 def get_clusterdock_label(cluster_name=None):
     """
-    Generate a Clusterdock meta data label in json format. Meta data such as: Clusterdock
-    package name, version, location of Clusterdock install -etc.
+    Generate a clusterdock meta data label in json format. Meta data such as: clusterdock
+    package name, version, location of clusterdock install -etc.
 
         Args:
             cluster_name (:obj:`str`, optional): Cluster name to attach to meta data label.
                 Default: ``None``
 
         Returns:
-            (json): Clusterdock meta data label
+            (json): clusterdock meta data label
     """
     label_str = ''
     try:
@@ -145,8 +145,7 @@ def get_clusterdock_label(cluster_name=None):
             label_info['cluster_name'] = cluster_name
         label_str = json.dumps(label_info)
     except:
-        # pass
-        raise
+        pass
     return label_str
 
 
@@ -198,6 +197,6 @@ def print_topology_meta(topology_name, quiet=False):
             git_dir = os.path.join(os.path.realpath(topology_name), '.git')
             out = subprocess.check_output('git --git-dir {} rev-parse --short HEAD'.format(git_dir),
                                           shell=True, stderr=subprocess.STDOUT).strip().decode()
-            logger.info('%s is using %s git hash', topology_name, out)
+            logger.info('%s has Git hash %s', topology_name, out)
     except:
         pass
