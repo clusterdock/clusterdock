@@ -13,6 +13,7 @@
 
 """Various utilities to be used by other modules."""
 
+import json
 import logging
 import operator
 import os
@@ -20,6 +21,7 @@ import random
 import socket
 import subprocess
 from functools import reduce
+from pkg_resources import get_distribution
 from time import sleep, time
 
 logger = logging.getLogger(__name__)
@@ -122,33 +124,62 @@ def version_str(version):
         return '.'.join([str(int(x)) for x in version])
 
 
-ADJECTIVES = ['bright', 'new', 'pointed', 'red', 'single', 'brightest', 'big', 'white', 'fixed',
-              'yellow', 'double', 'nearest', 'central', 'lucky', 'famous', 'polar',
-              'particular', 'distant', 'former', 'brilliant', 'pole', 'variable', 'massive',
-              'blue', 'day', 'beautiful', 'evil', 'faint', 'popular', 'female',
-              'biggest', 'golden', 'giant', 'blazing', 'favorite', 'hot', 'lone',
-              'morning', 'fallen', 'north', 'tiny', 'male', 'brittle', 'dark',
-              'solitary', 'top', 'unlucky', 'type', 'typical', 'huge', 'porn',
-              'northern', 'farthest', 'rayed', 'pale', 'nearby', 'green', 'brighter',
-              'musical', 'time', 'dead', 'silent', 'all', 'luminous', 'bunch',
-              'clump', 'flock', 'agglomeration', 'bundle', 'constellate', 'swad', 'huddle',
-              'forgather', 'agglomerate', 'pleiades', 'tuft', 'collective', 'mass', 'component',
-              'fragmentation', 'nucleus', 'heap', 'aggregation', 'clustering', 'tussock', 'knot',
-              'foregather', 'clusters', 'mob', 'supergroup', 'collection', 'multitude', 'bevy',
-              'amass', 'sabha', 'regroup', 'congregate', 'globular', 'uncollected', 'batch',
-              'larger', 'groud', 'components', 'compound', 'gatherer', 'structures', 'semigroup',
-              'cortege', 'convocation', 'concourse', 'gang', 'fragments', 'shells', 'plant',
-              'cells', 'embedded', 'acyl', 'measuring', 'detected', 'markers', 'monoid',
-              'distinct', 'complexes', 'localized', 'scattered', 'congregation', 'craters',
-              'flattened', 'explosive', 'quintet']
+def get_clusterdock_label(cluster_name=None):
+    """
+    Generate a Clusterdock meta data label in json format. Meta data such as: Clusterdock
+    package name, version, location of Clusterdock install -etc.
+
+        Args:
+            cluster_name (:obj:`str`, optional): Cluster name to attach to meta data label.
+                Default: ``None``
+
+        Returns:
+            (json): Clusterdock meta data label
+    """
+    label_str = ''
+    try:
+        package = get_distribution('clusterdock')
+        label_info = {'name': package.project_name, 'version': package.version,
+                      'location': package.location}
+        if cluster_name:
+            label_info['cluster_name'] = cluster_name
+        label_str = json.dumps(label_info)
+    except:
+        # pass
+        raise
+    return label_str
+
+
+ADJECTIVES = ['accurate', 'actual', 'angular', 'associative', 'astronomical', 'asymmetrical',
+              'available', 'beautiful', 'biggest', 'bimodal', 'biochemical', 'biological',
+              'bright', 'celestial', 'closest', 'colorful', 'comparable', 'computational',
+              'consistent', 'conspicuous', 'continuous', 'conventional', 'coolest', 'cosmic',
+              'cosmological', 'critical', 'crucial', 'cubic', 'deeper', 'different',
+              'difficult', 'distant', 'dynamical', 'early', 'easiest', 'efficient',
+              'electromagnetic', 'empirical', 'evolutionary', 'faster', 'favorable', 'fewer',
+              'fissile', 'fissionable', 'functional', 'galactic', 'gaseous', 'gaussian',
+              'gravitational', 'greater', 'gregarious', 'hard', 'heaviest', 'hierarchical',
+              'highest', 'historical', 'homogeneous]', 'hot', 'impervious', 'important',
+              'intelligent', 'intense', 'intergalactic', 'internal', 'interstellar', 'intrinsic',
+              'invisible', 'kinetic', 'largest', 'linear', 'magnetic', 'mechanical',
+              'molecular', 'morphological', 'naive', 'nearest', 'nuclear', 'obvious',
+              'oldest', 'optical', 'orbital', 'outer', 'outward', 'perceptible',
+              'photographic', 'photometric', 'physical', 'planetary', 'precise', 'proper',
+              'random', 'reliable', 'richest', 'robust', 'rotational', 'scientific',
+              'shortest', 'significant', 'similar', 'skeletal', 'smallest', 'solar',
+              'southern', 'spectral', 'spectroscopic', 'spherical', 'strong', 'subsequent',
+              'successful', 'sufficient', 'systematic', 'terrestrial', 'thematic', 'tidal',
+              'tighter', 'typical', 'uncertain', 'uncollected', 'unformed', 'unlikely',
+              'unrelated', 'unresolved', 'unstable', 'unusual',
+              'useful', 'violent', 'visible', 'visual', 'weak']
 
 
 # Astro cluster names
-NAMES = ['Antlia', 'Bullet', 'CarolinesRose', 'Centaurus', 'Chandelier', 'Coathanger',
-         'Coma', 'Double', 'ElGordo', 'Fornax', 'Globular', 'Hyades', 'Hydra',
-         'LaniakeaSuper', 'M22', 'M35', 'MayallII', 'MusketBall', 'NGC752', 'Norma',
-         'OmicronVelorum', 'Pandora', 'Phoenix', 'Pleiades', 'Praesepe', 'Ptolemy', 'Pyxis',
-         'Reticulum', 'Beehive', 'Hercules', 'WildDuck', 'Virgo']
+NAMES = ['antlia', 'bullet', 'carolines_rose', 'centaurus', 'chandelier', 'coathanger',
+         'coma', 'double', 'el_gordo', 'fornax', 'globular', 'hyades', 'hydra',
+         'laniakea_super', 'm22', 'm35', 'mayall2', 'musket_ball', 'ngc752', 'norma',
+         'omicron_velorum', 'pandora', 'phoenix', 'pleiades', 'praesepe', 'ptolemy', 'pyxis',
+         'reticulum', 'beehive', 'hercules', 'wild_duck', 'virgo']
 
 
 def generate_cluster_name():
@@ -164,22 +195,9 @@ def print_topology_meta(topology_name, quiet=False):
     """
     try:
         if not quiet:
-            topology_dir = os.path.realpath(topology_name)
-            logger.info('%s is running out of %s', topology_name, topology_dir)
-            git_dir = os.path.join(topology_dir, '.git')
-
-            cmd = ['git', '--git-dir', git_dir, 'ls-remote', '--get-url']
-            child = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-            out = child.communicate()[0]
-            if child.returncode == 0:
-                out = out.strip().decode('ascii')
-                logger.info('%s is using %s remote URL', topology_name, out)
-
-            cmd = ['git', '--git-dir', git_dir, 'rev-parse', '--short', 'HEAD']
-            child = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-            out = child.communicate()[0]
-            if child.returncode == 0:
-                out = out.strip().decode('ascii')
-                logger.info('%s is using %s git hash', topology_name, out)
+            git_dir = os.path.join(os.path.realpath(topology_name), '.git')
+            out = subprocess.check_output('git --git-dir {} rev-parse --short HEAD'.format(git_dir),
+                                          shell=True, stderr=subprocess.STDOUT).strip().decode()
+            logger.info('%s is using %s git hash', topology_name, out)
     except:
         pass

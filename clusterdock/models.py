@@ -18,7 +18,6 @@ to bring up clusters.
 import copy
 import datetime
 import io
-import json
 import logging
 import tarfile
 import time
@@ -30,7 +29,7 @@ import requests
 
 from .config import defaults
 from .exceptions import DuplicateHostnamesError
-from .utils import generate_cluster_name, nested_get, wait_for_condition
+from .utils import generate_cluster_name, get_clusterdock_label, nested_get, wait_for_condition
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +75,7 @@ class Cluster:
             update_etc_hosts (:obj:`bool`): Update the /etc/hosts file on the host with the hostname
                 and IP address of the container. Default: ``True``
         """
-        logger.info('Starting %s cluster on network (%s) ...', self.name, network)
+        logger.info('Starting cluster (%s) on network (%s) ...', self.name, network)
         self.network = network
         the_network = self._setup_network(name=self.network)
 
@@ -124,7 +123,7 @@ class Cluster:
 
     def _setup_network(self, name):
         try:
-            labels = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'): _get_clusterdock_label(self.name)}
+            labels = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'): get_clusterdock_label(self.name)}
             network = client.networks.create(name=name,
                                              driver=DEFAULT_NETWORK_TYPE,
                                              check_duplicate=True,
@@ -234,6 +233,7 @@ class Node:
 
         Args:
             network (:obj:`str`): Docker network to which to attach the container.
+            cluster_name (:obj:`str`, optional): Cluster name to use for the Node. Default: ``None``
         """
         self.fqdn = '{}.{}'.format(self.hostname, network)
 
@@ -314,7 +314,7 @@ class Node:
         })
 
         create_container_kwargs['labels'] = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'):
-                                             _get_clusterdock_label(cluster_name)}
+                                             get_clusterdock_label(cluster_name)}
 
         logger.info('Starting node %s ...', self.fqdn)
         # Since we need to use the low-level API to handle networking properly, we need to get
@@ -485,17 +485,3 @@ class Node:
                               command=[self.execute_shell, '-c', command],
                               volumes=volumes,
                               remove=True)
-
-
-def _get_clusterdock_label(cluster_name=None):
-    label_str = ''
-    try:
-        package = get_distribution('clusterdock')
-        label_info = {'name': package.project_name, 'version': package.version,
-                      'location': package.location}
-        if cluster_name:
-            label_info['cluster_name'] = cluster_name
-        label_str = json.dumps(label_info)
-    except:
-        pass
-    return label_str
