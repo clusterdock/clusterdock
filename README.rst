@@ -112,8 +112,7 @@ To see full usage instructions for the ``build`` action, use ``-h``/``--help``:
 .. code-block:: console
 
     $ clusterdock build topology_nodebase -h
-    usage: clusterdock build [--namespace ns] [--network nw] [-o sys] [-r url]
-                             [-h]
+    usage: clusterdock build [--network nw] [-o sys] [--repository repo] [-h]
                              topology
 
     Build images for the nodebase topology
@@ -122,13 +121,10 @@ To see full usage instructions for the ``build`` action, use ``-h``/``--help``:
       topology              A clusterdock topology directory
 
     optional arguments:
-      --namespace ns        Namespace to use when looking for images (default:
-                            None)
       --network nw          Docker network to use (default: cluster)
       -o sys, --operating-system sys
                             Operating system to use for cluster nodes (default:
                             None)
-      -r url, --registry url
-                            Docker Registry from which to pull images (default:
-                            docker.io)
+      --repository repo     Docker repository to use for committing images
+                            (default: docker.io/clusterdock)
       -h, --help            show this help message and exit

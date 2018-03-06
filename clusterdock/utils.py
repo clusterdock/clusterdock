@@ -15,7 +15,10 @@
 
 import logging
 import operator
+import os
+import random
 import socket
+import subprocess
 from functools import reduce
 from time import sleep, time
 
@@ -117,3 +120,66 @@ def version_str(version):
         return version
     elif isinstance(version, tuple):
         return '.'.join([str(int(x)) for x in version])
+
+
+ADJECTIVES = ['bright', 'new', 'pointed', 'red', 'single', 'brightest', 'big', 'white', 'fixed',
+              'yellow', 'double', 'nearest', 'central', 'lucky', 'famous', 'polar',
+              'particular', 'distant', 'former', 'brilliant', 'pole', 'variable', 'massive',
+              'blue', 'day', 'beautiful', 'evil', 'faint', 'popular', 'female',
+              'biggest', 'golden', 'giant', 'blazing', 'favorite', 'hot', 'lone',
+              'morning', 'fallen', 'north', 'tiny', 'male', 'brittle', 'dark',
+              'solitary', 'top', 'unlucky', 'type', 'typical', 'huge', 'porn',
+              'northern', 'farthest', 'rayed', 'pale', 'nearby', 'green', 'brighter',
+              'musical', 'time', 'dead', 'silent', 'all', 'luminous', 'bunch',
+              'clump', 'flock', 'agglomeration', 'bundle', 'constellate', 'swad', 'huddle',
+              'forgather', 'agglomerate', 'pleiades', 'tuft', 'collective', 'mass', 'component',
+              'fragmentation', 'nucleus', 'heap', 'aggregation', 'clustering', 'tussock', 'knot',
+              'foregather', 'clusters', 'mob', 'supergroup', 'collection', 'multitude', 'bevy',
+              'amass', 'sabha', 'regroup', 'congregate', 'globular', 'uncollected', 'batch',
+              'larger', 'groud', 'components', 'compound', 'gatherer', 'structures', 'semigroup',
+              'cortege', 'convocation', 'concourse', 'gang', 'fragments', 'shells', 'plant',
+              'cells', 'embedded', 'acyl', 'measuring', 'detected', 'markers', 'monoid',
+              'distinct', 'complexes', 'localized', 'scattered', 'congregation', 'craters',
+              'flattened', 'explosive', 'quintet']
+
+
+# Astro cluster names
+NAMES = ['Antlia', 'Bullet', 'CarolinesRose', 'Centaurus', 'Chandelier', 'Coathanger',
+         'Coma', 'Double', 'ElGordo', 'Fornax', 'Globular', 'Hyades', 'Hydra',
+         'LaniakeaSuper', 'M22', 'M35', 'MayallII', 'MusketBall', 'NGC752', 'Norma',
+         'OmicronVelorum', 'Pandora', 'Phoenix', 'Pleiades', 'Praesepe', 'Ptolemy', 'Pyxis',
+         'Reticulum', 'Beehive', 'Hercules', 'WildDuck', 'Virgo']
+
+
+def generate_cluster_name():
+    """
+    Generate a random cluster name.
+    """
+    return '{}_{}'.format(random.choice(ADJECTIVES), random.choice(NAMES))
+
+
+def print_topology_meta(topology_name, quiet=False):
+    """
+    Given a toplogy name, relative to current directory, print its meta info.
+    """
+    try:
+        if not quiet:
+            topology_dir = os.path.realpath(topology_name)
+            logger.info('%s is running out of %s', topology_name, topology_dir)
+            git_dir = os.path.join(topology_dir, '.git')
+
+            cmd = ['git', '--git-dir', git_dir, 'ls-remote', '--get-url']
+            child = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+            out = child.communicate()[0]
+            if child.returncode == 0:
+                out = out.strip().decode('ascii')
+                logger.info('%s is using %s remote URL', topology_name, out)
+
+            cmd = ['git', '--git-dir', git_dir, 'rev-parse', '--short', 'HEAD']
+            child = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+            out = child.communicate()[0]
+            if child.returncode == 0:
+                out = out.strip().decode('ascii')
+                logger.info('%s is using %s git hash', topology_name, out)
+    except:
+        pass
