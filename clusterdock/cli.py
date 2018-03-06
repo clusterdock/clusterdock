@@ -123,13 +123,10 @@ def main():
                                help="Don't actually perform manage actions")
     manage_subparsers = manage_parser.add_subparsers(dest='manage_action')
     manage_subparsers.required = True
-    manage_subparsers.add_parser('nuke')
 
-    remove_parser = manage_subparsers.add_parser('remove')
-    remove_parser.add_argument('-n', '--network',
-                               help='Network to remove (including all attached containers)',
-                               metavar='ntwrk',
-                               nargs='+')
+    nuke_parser = manage_subparsers.add_parser('nuke')
+    nuke_parser.add_argument('cluster_name', nargs='?',
+                             help='The nodes of cluster to nuke')
 
     # SSH parser
     # ~~~~~~~~~~
