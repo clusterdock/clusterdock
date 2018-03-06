@@ -49,6 +49,16 @@ Next, clone a clusterdock topology to your machine. For this example, we'll use 
     2017-08-03 10:04:19 PM clusterdock.models   INFO     Starting node node-2.cluster ...
     2017-08-03 10:04:20 PM clusterdock.models   INFO     Cluster started successfully (total time: 00:00:01.621).
 
+To list cluster nodes:
+
+.. code-block:: console
+
+    $ clusterdock ps
+    For cluster `famous_Hyades` on network cluster the node(s) are:
+    CONTAINER ID     HOST NAME            PORTS              STATUS        CONTAINER NAME          VERSION    IMAGE
+    a205d88beb       node-2.cluster                          running       nervous_sinoussi        1.3.3      clusterdock/topology_nodebase:centos6.6
+    6f2825c596       node-1.cluster       8080->80/tcp       running       priceless_franklin      1.3.3      clusterdock/topology_nodebase:centos6.6
+
 To SSH into a node and look around:
 
 .. code-block:: console
