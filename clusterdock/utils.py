@@ -13,10 +13,15 @@
 
 """Various utilities to be used by other modules."""
 
+import json
 import logging
 import operator
+import os
+import random
 import socket
+import subprocess
 from functools import reduce
+from pkg_resources import get_distribution
 from time import sleep, time
 
 logger = logging.getLogger(__name__)
@@ -117,3 +122,81 @@ def version_str(version):
         return version
     elif isinstance(version, tuple):
         return '.'.join([str(int(x)) for x in version])
+
+
+def get_clusterdock_label(cluster_name=None):
+    """
+    Generate a clusterdock meta data label in json format. Meta data such as: clusterdock
+    package name, version, location of clusterdock install -etc.
+
+        Args:
+            cluster_name (:obj:`str`, optional): Cluster name to attach to meta data label.
+                Default: ``None``
+
+        Returns:
+            (json): clusterdock meta data label
+    """
+    label_str = ''
+    try:
+        package = get_distribution('clusterdock')
+        label_info = {'name': package.project_name, 'version': package.version,
+                      'location': package.location}
+        if cluster_name:
+            label_info['cluster_name'] = cluster_name
+        label_str = json.dumps(label_info)
+    except:
+        pass
+    return label_str
+
+
+ADJECTIVES = ['accurate', 'actual', 'angular', 'associative', 'astronomical', 'asymmetrical',
+              'available', 'beautiful', 'biggest', 'bimodal', 'biochemical', 'biological',
+              'bright', 'celestial', 'closest', 'colorful', 'comparable', 'computational',
+              'consistent', 'conspicuous', 'continuous', 'conventional', 'coolest', 'cosmic',
+              'cosmological', 'critical', 'crucial', 'cubic', 'deeper', 'different',
+              'difficult', 'distant', 'dynamical', 'early', 'easiest', 'efficient',
+              'electromagnetic', 'empirical', 'evolutionary', 'faster', 'favorable', 'fewer',
+              'fissile', 'fissionable', 'functional', 'galactic', 'gaseous', 'gaussian',
+              'gravitational', 'greater', 'gregarious', 'hard', 'heaviest', 'hierarchical',
+              'highest', 'historical', 'homogeneous]', 'hot', 'impervious', 'important',
+              'intelligent', 'intense', 'intergalactic', 'internal', 'interstellar', 'intrinsic',
+              'invisible', 'kinetic', 'largest', 'linear', 'magnetic', 'mechanical',
+              'molecular', 'morphological', 'naive', 'nearest', 'nuclear', 'obvious',
+              'oldest', 'optical', 'orbital', 'outer', 'outward', 'perceptible',
+              'photographic', 'photometric', 'physical', 'planetary', 'precise', 'proper',
+              'random', 'reliable', 'richest', 'robust', 'rotational', 'scientific',
+              'shortest', 'significant', 'similar', 'skeletal', 'smallest', 'solar',
+              'southern', 'spectral', 'spectroscopic', 'spherical', 'strong', 'subsequent',
+              'successful', 'sufficient', 'systematic', 'terrestrial', 'thematic', 'tidal',
+              'tighter', 'typical', 'uncertain', 'uncollected', 'unformed', 'unlikely',
+              'unrelated', 'unresolved', 'unstable', 'unusual',
+              'useful', 'violent', 'visible', 'visual', 'weak']
+
+
+# Astro cluster names
+NAMES = ['antlia', 'bullet', 'carolines_rose', 'centaurus', 'chandelier', 'coathanger',
+         'coma', 'double', 'el_gordo', 'fornax', 'globular', 'hyades', 'hydra',
+         'laniakea_super', 'm22', 'm35', 'mayall2', 'musket_ball', 'ngc752', 'norma',
+         'omicron_velorum', 'pandora', 'phoenix', 'pleiades', 'praesepe', 'ptolemy', 'pyxis',
+         'reticulum', 'beehive', 'hercules', 'wild_duck', 'virgo']
+
+
+def generate_cluster_name():
+    """
+    Generate a random cluster name.
+    """
+    return '{}_{}'.format(random.choice(ADJECTIVES), random.choice(NAMES))
+
+
+def print_topology_meta(topology_name, quiet=False):
+    """
+    Given a toplogy name, relative to current directory, print its meta info.
+    """
+    try:
+        if not quiet:
+            git_dir = os.path.join(os.path.realpath(topology_name), '.git')
+            out = subprocess.check_output('git --git-dir {} rev-parse --short HEAD'.format(git_dir),
+                                          shell=True, stderr=subprocess.STDOUT).strip().decode()
+            logger.info('%s has Git hash %s', topology_name, out)
+    except:
+        pass

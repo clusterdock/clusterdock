@@ -22,12 +22,14 @@ import logging
 import tarfile
 import time
 from collections import OrderedDict, namedtuple
+from pkg_resources import get_distribution
 
 import docker
 import requests
 
+from .config import defaults
 from .exceptions import DuplicateHostnamesError
-from .utils import nested_get, wait_for_condition
+from .utils import generate_cluster_name, get_clusterdock_label, nested_get, wait_for_condition
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,7 @@ class Cluster:
     """
 
     def __init__(self, *nodes):
+        self.name = generate_cluster_name()
         self.nodes = nodes
         self.node_groups = {}
 
@@ -72,7 +75,7 @@ class Cluster:
             update_etc_hosts (:obj:`bool`): Update the /etc/hosts file on the host with the hostname
                 and IP address of the container. Default: ``True``
         """
-        logger.info('Starting cluster on network (%s) ...', network)
+        logger.info('Starting cluster (%s) on network (%s) ...', self.name, network)
         self.network = network
         the_network = self._setup_network(name=self.network)
 
@@ -96,7 +99,7 @@ class Cluster:
                                               network=self.network)
 
         for node in self:
-            node.start(self.network)
+            node.start(self.network, cluster_name=self.name)
 
     def execute(self, command, **kwargs):
         """Execute a command on every :py:class:`clusterdock.models.Node` within the
@@ -120,9 +123,11 @@ class Cluster:
 
     def _setup_network(self, name):
         try:
+            labels = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'): get_clusterdock_label(self.name)}
             network = client.networks.create(name=name,
                                              driver=DEFAULT_NETWORK_TYPE,
-                                             check_duplicate=True)
+                                             check_duplicate=True,
+                                             labels=labels)
             logger.debug('Successfully created network (%s).', name)
         except docker.errors.APIError as api_error:
             if api_error.explanation == 'network with name {} already exists'.format(name):
@@ -223,11 +228,12 @@ class Node:
 
         self.execute_shell = '/bin/sh'
 
-    def start(self, network):
+    def start(self, network, cluster_name=None):
         """Start the node.
 
         Args:
             network (:obj:`str`): Docker network to which to attach the container.
+            cluster_name (:obj:`str`, optional): Cluster name to use for the Node. Default: ``None``
         """
         self.fqdn = '{}.{}'.format(self.hostname, network)
 
@@ -307,6 +313,9 @@ class Node:
             network: client.api.create_endpoint_config(aliases=[self.hostname])
         })
 
+        create_container_kwargs['labels'] = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'):
+                                             get_clusterdock_label(cluster_name)}
+
         logger.info('Starting node %s ...', self.fqdn)
         # Since we need to use the low-level API to handle networking properly, we need to get
         # a container instance from the ID
@@ -330,7 +339,8 @@ class Node:
         # be in a RUNNING state. Wait until it is (or until timeout takes place).
         self.container = client.containers.get(container_id=container_id)
 
-        logger.debug('Connecting container (%s) to network (%s) ...', self.container.short_id, network)
+        logger.debug('Connecting container (%s) to network (%s) ...',
+                     self.container.short_id, network)
 
         # Wait for container to be in running state before moving on.
         def condition(container):
