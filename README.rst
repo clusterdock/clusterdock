@@ -27,10 +27,15 @@ is a swell project, if I may say so myself.
 "I hate reading, make this quick."
 ==================================
 
-Before doing anything, install a recent version of `Docker`_ to your machine. Next,
-clone a clusterdock topology to your machine. For this example,
-we'll use the `nodebase topology`_.
-Assuming that you've already installed **clusterdock**, you could start a 2-node cluster:
+Before doing anything, install a recent version of `Docker`_ to your machine and install
+Clusterdock as:
+
+.. code-block:: console
+
+    $ pip install clusterdock
+
+Next, clone a clusterdock topology to your machine. For this example, we'll use the
+`nodebase topology`_. You could start a 2-node cluster:
 
 .. _Docker: https://www.docker.com/
 .. _nodebase topology: https://github.com/clusterdock/topology_nodebase
@@ -43,6 +48,16 @@ Assuming that you've already installed **clusterdock**, you could start a 2-node
     2017-08-03 10:04:18 PM clusterdock.models   INFO     Starting node node-1.cluster ...
     2017-08-03 10:04:19 PM clusterdock.models   INFO     Starting node node-2.cluster ...
     2017-08-03 10:04:20 PM clusterdock.models   INFO     Cluster started successfully (total time: 00:00:01.621).
+
+To list cluster nodes:
+
+.. code-block:: console
+
+    $ clusterdock ps
+    For cluster `famous_Hyades` on network cluster the node(s) are:
+    CONTAINER ID     HOST NAME            PORTS              STATUS        CONTAINER NAME          VERSION    IMAGE
+    a205d88beb       node-2.cluster                          running       nervous_sinoussi        1.3.3      clusterdock/topology_nodebase:centos6.6
+    6f2825c596       node-1.cluster       8080->80/tcp       running       priceless_franklin      1.3.3      clusterdock/topology_nodebase:centos6.6
 
 To SSH into a node and look around:
 
@@ -112,8 +127,7 @@ To see full usage instructions for the ``build`` action, use ``-h``/``--help``:
 .. code-block:: console
 
     $ clusterdock build topology_nodebase -h
-    usage: clusterdock build [--namespace ns] [--network nw] [-o sys] [-r url]
-                             [-h]
+    usage: clusterdock build [--network nw] [-o sys] [--repository repo] [-h]
                              topology
 
     Build images for the nodebase topology
@@ -122,13 +136,10 @@ To see full usage instructions for the ``build`` action, use ``-h``/``--help``:
       topology              A clusterdock topology directory
 
     optional arguments:
-      --namespace ns        Namespace to use when looking for images (default:
-                            None)
       --network nw          Docker network to use (default: cluster)
       -o sys, --operating-system sys
                             Operating system to use for cluster nodes (default:
                             None)
-      -r url, --registry url
-                            Docker Registry from which to pull images (default:
-                            docker.io)
+      --repository repo     Docker repository to use for committing images
+                            (default: docker.io/clusterdock)
       -h, --help            show this help message and exit
