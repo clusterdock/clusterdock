@@ -2,6 +2,17 @@
 History
 =======
 
+1.5.0 (2018.03.05)
+------------------
+
+* New actions ``build`` (build image), ``cp`` (copy files between nodes), ``ps`` (list nodes) added.
+* ``com.clusterdock.clusterdock`` Docker label added to cluster nodes with cluster name -etc data.
+* Cluster names are dynamically generated and used across ``ps``, ``manage nuke`` actions.
+* ``manage nuke`` sub-action takes optional argument, ``cluster_name``.
+* Improvements to network remove in ``manage nuke`` sub-action.
+* ``clusterdock`` command without any arguments gives help message.
+* Removed unused ``manage remove`` sub-action.
+
 1.4.0 (2018.02.21)
 ------------------
 
