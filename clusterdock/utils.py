@@ -209,13 +209,22 @@ def print_topology_meta(topology_name, quiet=False):
         pass
 
 
-def get_containers(label_check):
+def get_containers(clusterdock=False):
+    """
+    Get Docker containers.
+
+    Args:
+        clusterdock (:obj:`bool`, optional): Clusterdock containers only. Default: ``False``
+
+    Returns:
+        (:obj:`list`): List of containers.
+    """
     Container = namedtuple('Container', ['cluster_name', 'container'])
     label_key = defaults['DEFAULT_DOCKER_LABEL_KEY']
     cluster_containers = []
     if client.containers.list():
         for container in client.containers.list(all=True):
-            if not label_check:
+            if not clusterdock:
                 cluster_containers.append(Container(None, container))
             else:
                 labels = nested_get(container.attrs, ['Config', 'Labels'])

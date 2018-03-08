@@ -30,13 +30,13 @@ def main(args):
     if args.manage_action == 'nuke':
         logger.info('Stopping and removing %s containers ...',
                     ('all' if args.all else 'clusterdock'))
-        cluster_containers = (get_containers(label_check=False)
-                              if args.all else get_containers(label_check=True))
+        cluster_containers = (get_containers()
+                              if args.all else get_containers(clusterdock=True))
         _nuke_containers_and_networks(cluster_containers, args.dry_run, nuke_networks=True)
     if args.manage_action == 'remove':
         logger.info('Stopping and removing containers from cluster(s) %s ...', args.clusters)
         cluster_containers = [cluster_container
-                              for cluster_container in get_containers(label_check=True)
+                              for cluster_container in get_containers(clusterdock=True)
                               if cluster_container.cluster_name in args.clusters]
         _nuke_containers_and_networks(cluster_containers, args.dry_run, remove_network=args.network)
 

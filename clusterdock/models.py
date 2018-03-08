@@ -50,8 +50,7 @@ class Cluster:
 
     def __init__(self, *nodes, name=None):
         if name:
-            clusters = [container.cluster_name
-                             for container in get_containers(label_check=True)]
+            clusters = [container.cluster_name for container in get_containers(clusterdock=True)]
             if name in clusters:
                 raise DuplicateClusterNameError(name=name, clusters=set(clusters))
             else:
