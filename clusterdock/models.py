@@ -45,14 +45,14 @@ class Cluster:
 
     Args:
         *nodes: One or more :py:obj:`clusterdock.models.Node` instances.
-        name (:obj:`str`, optional): Cluster name to use. Default: :py:func:`generate_cluster_name`
+        name (:obj:`str`, optional): Cluster name to use. Default: a randomly-generated cluster name
     """
 
     def __init__(self, *nodes, name=None):
         if name:
-            clusters = [container.cluster_name for container in get_containers(clusterdock=True)]
+            clusters = {container.cluster_name for container in get_containers(clusterdock=True)}
             if name in clusters:
-                raise DuplicateClusterNameError(name=name, clusters=set(clusters))
+                raise DuplicateClusterNameError(name=name, clusters=clusters)
             else:
                 self.name = name
         else:

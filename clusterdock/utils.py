@@ -214,7 +214,7 @@ def get_containers(clusterdock=False):
     Get Docker containers.
 
     Args:
-        clusterdock (:obj:`bool`, optional): Clusterdock containers only. Default: ``False``
+        clusterdock (:obj:`bool`, optional): clusterdock containers only. Default: ``False``
 
     Returns:
         (:obj:`list`): List of containers.

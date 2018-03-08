@@ -56,7 +56,7 @@ def main():
     build_parser = action_subparsers.add_parser('build',
                                                 formatter_class=FORMATTER_CLASS,
                                                 add_help=False)
-    build_parser.add_argument('-nw', '--network',
+    build_parser.add_argument('-n', '--network',
                               help='Docker network to use',
                               default=defaults['DEFAULT_NETWORK'],
                               metavar='nw')
@@ -87,13 +87,13 @@ def main():
     start_parser.add_argument('--always-pull',
                               help="Pull latest images, even if they're available locally",
                               action='store_true')
-    start_parser.add_argument('-n', '--name',
+    start_parser.add_argument('-c', '--cluster-name',
                               help='Cluster name to use',
                               metavar='name')
-    start_parser.add_argument('-ns', '--namespace',
+    start_parser.add_argument('--namespace',
                               help='Namespace to use when looking for images',
                               metavar='ns')
-    start_parser.add_argument('-nw', '--network',
+    start_parser.add_argument('-n', '--network',
                               help='Docker network to use',
                               default=defaults['DEFAULT_NETWORK'],
                               metavar='nw')
@@ -133,7 +133,7 @@ def main():
                              action='store_true')
 
     remove_parser = manage_subparsers.add_parser('remove')
-    remove_parser.add_argument('-nw', '--network',
+    remove_parser.add_argument('-n', '--network',
                                help='Remove Docker network',
                                action='store_true')
     remove_parser.add_argument('clusters', nargs='+', metavar='cluster',
