@@ -82,7 +82,7 @@ def main():
                                               add_help=False)
 
     ps_parser = action_subparsers.add_parser('ps',
-                                             description=('List Clusterdock containers'),
+                                             description=('List clusterdock containers'),
                                              formatter_class=FORMATTER_CLASS,
                                              add_help=False)
 

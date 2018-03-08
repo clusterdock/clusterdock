@@ -54,7 +54,8 @@ To list cluster nodes:
 .. code-block:: console
 
     $ clusterdock ps
-    For cluster `famous_Hyades` on network cluster the node(s) are:
+
+    For cluster `famous_hyades` on network cluster the node(s) are:
     CONTAINER ID     HOST NAME            PORTS              STATUS        CONTAINER NAME          VERSION    IMAGE
     a205d88beb       node-2.cluster                          running       nervous_sinoussi        1.3.3      clusterdock/topology_nodebase:centos6.6
     6f2825c596       node-1.cluster       8080->80/tcp       running       priceless_franklin      1.3.3      clusterdock/topology_nodebase:centos6.6

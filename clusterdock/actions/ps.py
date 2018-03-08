@@ -13,7 +13,6 @@
 
 import json
 import logging
-import os
 import subprocess
 import tempfile
 from itertools import groupby
@@ -42,9 +41,9 @@ def main(args):
                 network_names = ', '.join(list(nested_get(container.attrs,['NetworkSettings',
                                                                  'Networks']).keys()))
                 listed_containers.append({'id': container.short_id, 'hostname': container_hostname,
-                                          'ports': ((', '.join('{}->{}'.format(v[0]['HostPort'], k)
-                                                               for k, v in ports.items())
-                                                     if ports else '')),
+                                          'ports': (', '.join('{}->{}'.format(v[0]['HostPort'], k)
+                                                              for k, v in ports.items())
+                                                    if ports else ''),
                                           'image': container.image.tags[0],
                                           'status': container.status, 'name': container.name,
                                           'version': label['version'],
@@ -60,16 +59,16 @@ def main(args):
                       '{:<' + str(max_len_list_dict_item(listed_containers, 'name')+6) + '}'
                       '{:<' + str(max_len_list_dict_item(listed_containers, 'version')+6) + '}'
                       '{:<' + str(max_len_list_dict_item(listed_containers, 'image')+6) + '} ')
-        linesep = ''
         sorted_data = sorted(listed_containers, key=lambda x: x['cluster_name'])
         for key, containers in groupby(sorted_data, key=lambda x: x['cluster_name']):
             containers = list(containers)
-            print('{}For cluster `{}` on network {} '
-                  'the node(s) are:'.format(linesep, key, containers[0]['networks']))
+            print()
+            print('For cluster `{}` on network {} '
+                  'the node(s) are:'.format(key, containers[0]['networks']))
             print(format_str.format('CONTAINER ID', 'HOST NAME', 'PORTS',
                                     'STATUS', 'CONTAINER NAME', 'VERSION', 'IMAGE'))
             for container in containers:
                 print(format_str.format(container['id'], container['hostname'],
                                         container['ports'], container['status'], container['name'],
                                         container['version'], container['image']))
-            linesep = os.linesep
+        print()

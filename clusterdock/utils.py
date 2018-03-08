@@ -232,3 +232,13 @@ def get_containers(clusterdock=False):
                     label = json.loads(labels[label_key])
                     cluster_containers.append(Container(label['cluster_name'], container))
     return cluster_containers
+
+
+def max_len_list_dict_item(list_dict, attr):
+    """
+    Returns max length of a given attribute from a list of dict items.
+    """
+    length = 0
+    for item in list_dict:
+        length = length if length > len(item[attr]) else len(item[attr])
+    return length
