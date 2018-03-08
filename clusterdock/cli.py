@@ -56,17 +56,17 @@ def main():
     build_parser = action_subparsers.add_parser('build',
                                                 formatter_class=FORMATTER_CLASS,
                                                 add_help=False)
-    build_parser.add_argument('--network',
+    build_parser.add_argument('-n', '--network',
                               help='Docker network to use',
                               default=defaults['DEFAULT_NETWORK'],
                               metavar='nw')
     build_parser.add_argument('-o', '--operating-system',
                               help='Operating system to use for cluster nodes',
                               metavar='sys')
-    build_parser.add_argument('--repository',
+    build_parser.add_argument('-r', '--repository',
                               help='Docker repository to use for committing images',
                               default=defaults['DEFAULT_REPOSITORY'],
-                              metavar='repo')
+                              metavar='url')
 
     build_parser.add_argument('topology',
                               help='A clusterdock topology directory')
@@ -87,10 +87,13 @@ def main():
     start_parser.add_argument('--always-pull',
                               help="Pull latest images, even if they're available locally",
                               action='store_true')
+    start_parser.add_argument('-c', '--cluster-name',
+                              help='Cluster name to use',
+                              metavar='name')
     start_parser.add_argument('--namespace',
                               help='Namespace to use when looking for images',
                               metavar='ns')
-    start_parser.add_argument('--network',
+    start_parser.add_argument('-n', '--network',
                               help='Docker network to use',
                               default=defaults['DEFAULT_NETWORK'],
                               metavar='nw')
@@ -123,13 +126,18 @@ def main():
                                help="Don't actually perform manage actions")
     manage_subparsers = manage_parser.add_subparsers(dest='manage_action')
     manage_subparsers.required = True
-    manage_subparsers.add_parser('nuke')
+
+    nuke_parser = manage_subparsers.add_parser('nuke')
+    nuke_parser.add_argument('-a', '--all',
+                             help='Nuke all containers',
+                             action='store_true')
 
     remove_parser = manage_subparsers.add_parser('remove')
     remove_parser.add_argument('-n', '--network',
-                               help='Network to remove (including all attached containers)',
-                               metavar='ntwrk',
-                               nargs='+')
+                               help='Remove Docker network',
+                               action='store_true')
+    remove_parser.add_argument('clusters', nargs='+', metavar='cluster',
+                               help='One or more clusters to remove')
 
     # SSH parser
     # ~~~~~~~~~~

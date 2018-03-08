@@ -11,11 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 
 import docker
 
-from ..utils import nested_get
+from ..utils import get_containers, nested_get
 
 logger = logging.getLogger(__name__)
 
@@ -27,37 +28,70 @@ def main(args):
         logger.warning('All manage actions will be done in dry-run mode.')
 
     if args.manage_action == 'nuke':
-        if client.containers.list():
-            logger.info('Stopping and removing all containers ...')
-            for container in client.containers.list(all=True):
-                container_hostname = nested_get(container.attrs, ['Config', 'Hostname'])
-                logger.debug('Removing container %s (id: %s) ...',
-                             container_hostname,
-                             container.id)
-                if not args.dry_run:
-                    _remove_node_from_etc_hosts(container_hostname)
-                    container.remove(v=True, force=True)
-        else:
-            logger.warning("Didn't find any containers to remove. Continuing ...")
+        logger.info('Stopping and removing %s containers ...',
+                    ('all' if args.all else 'clusterdock'))
+        cluster_containers = (get_containers()
+                              if args.all else get_containers(clusterdock=True))
+        _nuke_containers_and_networks(cluster_containers, args.dry_run, nuke_networks=True)
+    if args.manage_action == 'remove':
+        logger.info('Stopping and removing containers from cluster(s) %s ...', args.clusters)
+        cluster_containers = [cluster_container
+                              for cluster_container in get_containers(clusterdock=True)
+                              if cluster_container.cluster_name in args.clusters]
+        _nuke_containers_and_networks(cluster_containers, args.dry_run, remove_network=args.network)
 
-        # Since we don't know whether any networks were removed until after we loop through them
-        # with our try-except block, keep track of them as we go and only display logging info
-        # after the fact.
-        removed_networks = []
-        for network in client.networks.list():
-            try:
+
+def _nuke_containers_and_networks(cluster_containers, dry_run,
+                                  nuke_networks=False, remove_network=False):
+    removed_containers = []
+    containers_networks = []
+    for cluster_container in cluster_containers:
+        container = cluster_container.container
+        cluster_name = cluster_container.cluster_name
+        if remove_network:
+            containers_networks.extend(list(nested_get(container.attrs,
+                                                       ['NetworkSettings', 'Networks']).keys()))
+        container_hostname = nested_get(container.attrs, ['Config', 'Hostname'])
+        logger.debug('Removing container %s (id: %s, cluster: %s) ...',
+                     container_hostname, container.short_id, cluster_name)
+        if not dry_run:
+            _remove_node_from_etc_hosts(container_hostname)
+            container.remove(v=True, force=True)
+            removed_containers.append(container_hostname)
+
+    if not dry_run and not removed_containers:
+        logger.warning("Didn't find any containers to remove. Continuing ...")
+
+    networks_to_remove = []
+    if nuke_networks: # `nuke_networks` overrides `remove_network` flag
+        networks_to_remove = client.networks.list()
+    else:
+        for network_name in set(containers_networks):
+            networks_to_remove.append(client.networks.get(network_name))
+
+    removed_networks = []
+    for network in networks_to_remove:
+        try:
+            logger.debug('Removing network %s (id: %s) ...', network.name, network.id)
+            if not dry_run:
                 network.remove()
                 removed_networks.append(network.name)
-            except docker.errors.APIError as api_error:
-                if 'is a pre-defined network and cannot be removed' not in api_error.explanation:
-                    raise api_error
-        if removed_networks:
-            logger.info('Removing all user-defined networks ...')
-            for network in removed_networks:
-                logger.debug('Removing network %s ...',
-                             network)
-        else:
-            logger.warning("Didn't find any user-defined networks to remove. Continuing ...")
+        except docker.errors.APIError as api_error:
+            if ('is a pre-defined network and cannot be removed' in api_error.explanation
+                or 'has active endpoints' in api_error.explanation):
+                pass
+            else:
+                raise api_error
+
+    if removed_networks:
+        logger.info('Removed user-defined networks ...')
+        for network in removed_networks:
+            logger.debug('Removed network %s ...', network)
+    else:
+        if not dry_run and remove_network:
+            logger.warning("Cannot remove network. Didn't find any user-defined networks or "
+                           'active containers on the network. Continuing ...')
+
 
 def _remove_node_from_etc_hosts(fqdn):
         """Remove node information to the Docker hosts' /etc/hosts file, exploiting Docker's

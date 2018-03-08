@@ -14,6 +14,16 @@
 """This module contains clusterdock exceptions."""
 
 
+class DuplicateClusterNameError(Exception):
+    def __init__(self, name, clusters):
+        self.name = name
+        self.clusters = sorted(clusters)
+
+    def __str__(self):
+        return ('Found duplicate cluster name ({}). '
+                'Clusters found ({})'.format(self.name, ', '.join(self.clusters)))
+
+
 class DuplicateHostnamesError(Exception):
     def __init__(self, duplicates, network):
         self.duplicates = sorted(duplicates)
