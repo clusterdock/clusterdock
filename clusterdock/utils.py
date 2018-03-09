@@ -251,5 +251,3 @@ def get_container(hostname):
     for container in client.containers.list():
         if nested_get(container.attrs, ['Config', 'Hostname']) == hostname:
             return container
-    else:
-        return None
