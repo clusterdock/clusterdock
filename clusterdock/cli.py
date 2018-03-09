@@ -160,10 +160,6 @@ def main():
     # Copy parser
     # ~~~~~~~~~~~
     _add_help(cp_parser)
-    cp_parser.add_argument('-a', '--archive', action='store_true',
-                           help='Archive mode (copy all uid/gid information)')
-    cp_parser.add_argument('-L', '--follow-link', action='store_true',
-                           help='Always follow symbol link in SRC_PATH')
     cp_parser.add_argument('source',
                            help=('Local or Node source file system path. '
                                  'E.g. SRC_PATH or Node FQDN:SRC_PATH'))
