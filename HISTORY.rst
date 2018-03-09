@@ -2,6 +2,15 @@
 History
 =======
 
+1.5.0 (2018.03.09)
+------------------
+
+* Add support for build action.
+* Use Docker labels for clusterdock nodes and clusters.
+* Enhance clusterdock manage action.
+* Add clusterdock ps action.
+* Add clusterdock cp action.
+
 1.4.0 (2018.02.21)
 ------------------
 
