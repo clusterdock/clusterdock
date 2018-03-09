@@ -2,7 +2,9 @@
 Authors
 =======
 
-clusterdock is written and maintained by `Dima Spivak <https://github.com/dimaspivak>`_.
+clusterdock is written and maintained by `Dima Spivak <https://github.com/dimaspivak>`_
+with invaluable contributions from `Srid Banoor <https://github.com/srids>`_ and
+`Kirti Velankar <https://github.com/kirtiv1>`_.
 
 Special thanks
 --------------
@@ -12,11 +14,6 @@ Special thanks
 - `Cloudera <https://www.cloudera.com>`_, for employing me during the Hackathon during
   which I wrote the first version of this project.
 - Coke Zero, for being chiefly responsible for my being awake between the hours of 9 am and 5 pm.
-
-Contributors
-------------
-
-- `Kirti Velankar <https://github.com/kirtiv1>`_.
 
 Other credits
 -------------
