@@ -86,6 +86,13 @@ def main():
                                              formatter_class=FORMATTER_CLASS,
                                              add_help=False)
 
+
+    cp_parser = action_subparsers.add_parser('cp',
+                                             description=('Copy files/folders between nodes or '
+                                                          'between node and host filesystem'),
+                                             formatter_class=FORMATTER_CLASS,
+                                             add_help=False)
+
     start_parser = action_subparsers.add_parser('start',
                                                 formatter_class=FORMATTER_CLASS,
                                                 add_help=False)
@@ -149,6 +156,16 @@ def main():
     _add_help(ssh_parser)
     ssh_parser.add_argument('node',
                             help='FQDN of cluster node to which to connect')
+
+    # Copy parser
+    # ~~~~~~~~~~~
+    _add_help(cp_parser)
+    cp_parser.add_argument('source',
+                           help=('Local or Node source file system path. '
+                                 'E.g. SRC_PATH or Node FQDN:SRC_PATH'))
+    cp_parser.add_argument('destination',
+                           help=('Local or Node destination file system path. '
+                                 'E.g. DEST_PATH or Node FQDN:DEST_PATH'))
 
     # ps parser
     # ~~~~~~~~~

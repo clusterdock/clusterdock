@@ -20,7 +20,6 @@ from itertools import groupby
 import docker
 
 from ..config import defaults
-from ..exceptions import NodeNotFoundError
 from ..utils import nested_get, max_len_list_dict_item
 
 logger = logging.getLogger(__name__)

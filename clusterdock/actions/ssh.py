@@ -14,21 +14,15 @@
 import logging
 import subprocess
 
-import docker
-
 from ..exceptions import NodeNotFoundError
-from ..utils import nested_get
+from ..utils import get_container
 
 logger = logging.getLogger(__name__)
 
-client = docker.from_env()
-
 
 def main(args):
-    for container in client.containers.list():
-        if nested_get(container.attrs, ['Config', 'Hostname']) == args.node:
-            break
-    else:
+    container = get_container(hostname=args.node)
+    if not container:
         raise NodeNotFoundError(args.node)
 
     subprocess.Popen('docker exec -it {} ssh -q localhost'.format(container.id),

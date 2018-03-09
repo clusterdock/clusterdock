@@ -242,3 +242,12 @@ def max_len_list_dict_item(list_dict, attr):
     for item in list_dict:
         length = length if length > len(item[attr]) else len(item[attr])
     return length
+
+
+def get_container(hostname):
+    """
+    Get running Docker container for a given hostname.
+    """
+    for container in client.containers.list():
+        if nested_get(container.attrs, ['Config', 'Hostname']) == hostname:
+            return container
