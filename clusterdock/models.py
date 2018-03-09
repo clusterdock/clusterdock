@@ -451,7 +451,7 @@ class Node:
             encoded_file = contents.encode()
             tarinfo = tarfile.TarInfo(path)
 
-            # We set the modification time to now because some parts of SDC (e.g. logging) rely upon
+            # We set the modification time to now because some systems (e.g. logging) rely upon
             # timestamps to determine whether to read config files.
             tarinfo.mtime = time.time()
             tarinfo.size = len(encoded_file)

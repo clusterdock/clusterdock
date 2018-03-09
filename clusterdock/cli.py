@@ -88,8 +88,8 @@ def main():
 
 
     cp_parser = action_subparsers.add_parser('cp',
-                                             description=('Copy files/folders between a node and '
-                                                          'the local filesystem'),
+                                             description=('Copy files/folders between nodes or '
+                                                          'between node and host filesystem'),
                                              formatter_class=FORMATTER_CLASS,
                                              add_help=False)
 

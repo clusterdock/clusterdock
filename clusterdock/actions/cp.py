@@ -12,56 +12,50 @@
 # limitations under the License.
 
 import logging
-import os
-import subprocess
-import tempfile
-
-import docker
+import io
+import tarfile
 
 from ..exceptions import NodeNotFoundError
-from ..utils import nested_get
+from ..utils import get_container
 
 logger = logging.getLogger(__name__)
-
-client = docker.from_env()
 
 
 def main(args):
     if args.source == args.destination:
-        raise ValueError('Cannot have source and destination the same')
+        raise ValueError('Cannot have the same source and destination')
 
-    options = '{} {}'.format('-a' if args.archive else '',
-                             '-L' if args.follow_link else '')
     if ':' in args.source and ':' in args.destination:
         src_container = _find_container(args.source.split(':')[0])
         dest_container = _find_container(args.destination.split(':')[0])
+        src_path = args.source.split(':')[1]
+        dest_path = args.destination.split(':')[1]
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            src_path = '{}:{}'.format(src_container.id, args.source.split(':')[1])
-            dest_path = '{}:{}'.format(dest_container.id, args.destination.split(':')[1])
-            subprocess.Popen('docker cp {} {} {}'.format(options, src_path, tmp_dir),
-                             shell=True).communicate()
-            subprocess.Popen('docker cp {} {} {}'.format(options, os.path.join(tmp_dir, '*'),
-                                                         dest_path),
-                             shell=True).communicate()
+        tarstream = io.BytesIO(src_container.get_archive(path=src_path)[0].read())
+        tarstream.seek(0)
+        dest_container.put_archive(path=dest_path, data=tarstream)
     elif ':' in args.source:
         src_container = _find_container(args.source.split(':')[0])
-        src_path = '{}:{}'.format(src_container.id, args.source.split(':')[1])
-        subprocess.Popen('docker cp {} {} {}'.format(options, src_path, args.destination),
-                         shell=True).communicate()
+        src_path = args.source.split(':')[1]
+
+        tarstream = io.BytesIO(src_container.get_archive(path=src_path)[0].read())
+        with tarfile.open(fileobj=tarstream) as tarfile_:
+            tarfile_.extractall(path=args.destination)
     elif ':' in args.destination:
         dest_container = _find_container(args.destination.split(':')[0])
-        dest_path = '{}:{}'.format(dest_container.id, args.destination.split(':')[1])
-        subprocess.Popen('docker cp {} {} {}'.format(options, args.source, dest_path),
-                         shell=True).communicate()
+        dest_path = args.destination.split(':')[1]
+
+        data = io.BytesIO()
+        with tarfile.open(fileobj=data, mode='w') as tarfile_:
+            tarfile_.add(args.source, arcname=args.source.split('/')[-1])
+        data.seek(0)
+        dest_container.put_archive(path=dest_path, data=data)
     else:
         raise ValueError('Source node FQDN or Destination node FQDN required')
 
 
 def _find_container(node):
-    for container in client.containers.list():
-        if nested_get(container.attrs, ['Config', 'Hostname']) == node:
-            break
-    else:
+    container = get_container(hostname=node)
+    if not container:
         raise NodeNotFoundError(node)
     return container
