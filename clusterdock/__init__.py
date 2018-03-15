@@ -30,19 +30,19 @@ formatter = colorlog.ColoredFormatter(
     ),
     reset=True,
     log_colors={
-        'DEBUG': 'bold_cyan',
-        'INFO': 'bold_green',
+        'DEBUG': 'cyan',
+        'INFO': 'green',
         'WARNING': 'bold_yellow',
         'ERROR': 'bold_red',
         'CRITICAL': 'bold_red,bg_white',
     },
     secondary_log_colors={
         'message': {
-            'DEBUG': 'white',
-            'INFO': 'bold_white',
+            'DEBUG': 'cyan',
+            'INFO': 'green',
             'WARNING': 'bold_yellow',
             'ERROR': 'bold_red',
-            'CRITICAL': 'bold_red',
+            'CRITICAL': 'bold_red,bg_white',
         },
     },
     style='%'

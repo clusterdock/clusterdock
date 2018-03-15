@@ -34,6 +34,7 @@ from .utils import (get_containers, generate_cluster_name, get_clusterdock_label
 
 logger = logging.getLogger(__name__)
 
+clusterdock_args = None
 client = docker.from_env()
 
 DEFAULT_NETWORK_TYPE = 'bridge'
@@ -45,16 +46,15 @@ class Cluster:
 
     Args:
         *nodes: One or more :py:obj:`clusterdock.models.Node` instances.
-        name (:obj:`str`, optional): Cluster name to use. Default: a randomly-generated cluster name
     """
 
-    def __init__(self, *nodes, name=None):
-        if name:
+    def __init__(self, *nodes):
+        if clusterdock_args.cluster_name:
             clusters = {container.cluster_name for container in get_containers(clusterdock=True)}
-            if name in clusters:
-                raise DuplicateClusterNameError(name=name, clusters=clusters)
+            if clusterdock_args.cluster_name in clusters:
+                raise DuplicateClusterNameError(name=clusterdock_args.cluster_name, clusters=clusters)
             else:
-                self.name = name
+                self.name = clusterdock_args.cluster_name
         else:
             self.name = generate_cluster_name()
 
@@ -73,6 +73,14 @@ class Cluster:
             logger.debug('Adding node (%s) to NodeGroup %s ...',
                          node.hostname,
                          node.group)
+
+        if clusterdock_args.port:
+            nodes_by_host = {node.hostname: node for node in self.nodes}
+            for port in clusterdock_args.port:
+                node = nodes_by_host.get(port.split(':')[0])
+                port_value = port.split(':')[1]
+                node.ports.append({port_value.split('->')[0]: port_value.split('->')[1]}
+                                  if '->' in port_value else {port_value: port_value})
 
     def start(self, network, pull_images=False, update_etc_hosts=True):
         """Start the cluster.
