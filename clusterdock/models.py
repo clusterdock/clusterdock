@@ -49,7 +49,9 @@ class Cluster:
     """
 
     def __init__(self, *nodes):
-        if clusterdock_args.cluster_name:
+        self.nodes = nodes
+
+        if clusterdock_args and clusterdock_args.cluster_name:
             clusters = {container.cluster_name for container in get_containers(clusterdock=True)}
             if clusterdock_args.cluster_name in clusters:
                 raise DuplicateClusterNameError(name=clusterdock_args.cluster_name, clusters=clusters)
@@ -58,9 +60,15 @@ class Cluster:
         else:
             self.name = generate_cluster_name()
 
-        self.nodes = nodes
-        self.node_groups = {}
+        if clusterdock_args and clusterdock_args.port:
+            nodes_by_host = {node.hostname: node for node in self.nodes}
+            for port in clusterdock_args.port:
+                node = nodes_by_host.get(port.split(':')[0])
+                port_value = port.split(':')[1]
+                node.ports.append({port_value.split('->')[0]: port_value.split('->')[1]}
+                                  if '->' in port_value else {port_value: port_value})
 
+        self.node_groups = {}
         for node in self.nodes:
             if node.group not in self.node_groups:
                 logger.debug('Creating NodeGroup %s ...',
@@ -73,14 +81,6 @@ class Cluster:
             logger.debug('Adding node (%s) to NodeGroup %s ...',
                          node.hostname,
                          node.group)
-
-        if clusterdock_args.port:
-            nodes_by_host = {node.hostname: node for node in self.nodes}
-            for port in clusterdock_args.port:
-                node = nodes_by_host.get(port.split(':')[0])
-                port_value = port.split(':')[1]
-                node.ports.append({port_value.split('->')[0]: port_value.split('->')[1]}
-                                  if '->' in port_value else {port_value: port_value})
 
     def start(self, network, pull_images=False, update_etc_hosts=True):
         """Start the cluster.
