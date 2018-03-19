@@ -21,6 +21,7 @@ from dateutil.relativedelta import relativedelta
 
 import yaml
 
+import clusterdock.models as models
 from .config import defaults
 
 FORMATTER_CLASS = argparse.ArgumentDefaultsHelpFormatter
@@ -112,6 +113,12 @@ def main():
     start_parser.add_argument('-o', '--operating-system',
                               help='Operating system to use for cluster nodes',
                               metavar='sys')
+    start_parser.add_argument('-p', '--port',
+                              help=('Publish node port to the host. The format should be "<node name>:<node port>" '
+                                    'or "<node name>:<host port>-><node port>" (surrounding quotes are required). '
+                                    'Argument may be used more than once for multiple ports.'),
+                              metavar='port',
+                              action='append')
     start_parser.add_argument('-r', '--registry',
                               help='Docker Registry from which to pull images',
                               default=defaults['DEFAULT_REGISTRY'],
@@ -216,6 +223,8 @@ def main():
     if not args.action:
         parser.print_help()
         parser.exit()
+
+    models.clusterdock_args = args
 
     action = importlib.import_module('clusterdock.actions.{}'.format(args.action))
     action.main(args)

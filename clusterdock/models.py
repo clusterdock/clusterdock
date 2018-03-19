@@ -34,6 +34,7 @@ from .utils import (get_containers, generate_cluster_name, get_clusterdock_label
 
 logger = logging.getLogger(__name__)
 
+clusterdock_args = None
 client = docker.from_env()
 
 DEFAULT_NETWORK_TYPE = 'bridge'
@@ -45,22 +46,29 @@ class Cluster:
 
     Args:
         *nodes: One or more :py:obj:`clusterdock.models.Node` instances.
-        name (:obj:`str`, optional): Cluster name to use. Default: a randomly-generated cluster name
     """
 
-    def __init__(self, *nodes, name=None):
-        if name:
+    def __init__(self, *nodes):
+        self.nodes = nodes
+
+        if clusterdock_args and clusterdock_args.cluster_name:
             clusters = {container.cluster_name for container in get_containers(clusterdock=True)}
-            if name in clusters:
-                raise DuplicateClusterNameError(name=name, clusters=clusters)
+            if clusterdock_args.cluster_name in clusters:
+                raise DuplicateClusterNameError(name=clusterdock_args.cluster_name, clusters=clusters)
             else:
-                self.name = name
+                self.name = clusterdock_args.cluster_name
         else:
             self.name = generate_cluster_name()
 
-        self.nodes = nodes
-        self.node_groups = {}
+        if clusterdock_args and clusterdock_args.port:
+            nodes_by_host = {node.hostname: node for node in self.nodes}
+            for port in clusterdock_args.port:
+                node = nodes_by_host.get(port.split(':')[0])
+                port_value = port.split(':')[1]
+                node.ports.append({port_value.split('->')[0]: port_value.split('->')[1]}
+                                  if '->' in port_value else int(port_value))
 
+        self.node_groups = {}
         for node in self.nodes:
             if node.group not in self.node_groups:
                 logger.debug('Creating NodeGroup %s ...',
@@ -281,7 +289,7 @@ class Node:
                         container = client.containers.create(volume)
                     volumes_from.append(container.id)
                 else:
-                    element_type = type(element).__name__
+                    element_type = type(volume).__name__
                     raise TypeError('Saw volume of type {} (must be dict or str).'.format(element_type))
 
             if volumes_from:
@@ -304,7 +312,7 @@ class Node:
                 ports.append(port)
                 port_bindings[port] = None
             else:
-                element_type = type(element).__name__
+                element_type = type(port).__name__
                 raise TypeError('Saw port of type {} (must be dict or int).'.format(element_type))
 
         if ports:
@@ -378,10 +386,10 @@ class Node:
                                                                         ['NetworkSettings',
                                                                          'Ports']).items()}
         if self.host_ports:
-            logger.debug('Created host port mapping (%s) for node (%s).',
-                         '; '.join('{} => {}'.format(host_port, container_port)
-                                   for host_port, container_port in self.host_ports.items()),
-                         self.hostname)
+            logger.info('Created host port mapping (%s) for node (%s).',
+                        '; '.join('{} => {}'.format(host_port, container_port)
+                                  for host_port, container_port in self.host_ports.items()),
+                        self.hostname)
 
         self._add_node_to_etc_hosts()
 
