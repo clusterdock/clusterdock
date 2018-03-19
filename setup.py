@@ -42,7 +42,7 @@ test_requirements = [
 
 setup(
     name='clusterdock',
-    version='1.5.0',
+    version='1.6.0',
     description="clusterdock is a framework for creating Docker-based container clusters",
     long_description=readme + '\n\n' + history,
     author="Dima Spivak",
