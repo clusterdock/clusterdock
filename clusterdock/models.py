@@ -66,7 +66,7 @@ class Cluster:
                 node = nodes_by_host.get(port.split(':')[0])
                 port_value = port.split(':')[1]
                 node.ports.append({port_value.split('->')[0]: port_value.split('->')[1]}
-                                  if '->' in port_value else {port_value: port_value})
+                                  if '->' in port_value else int(port_value))
 
         self.node_groups = {}
         for node in self.nodes:
@@ -289,7 +289,7 @@ class Node:
                         container = client.containers.create(volume)
                     volumes_from.append(container.id)
                 else:
-                    element_type = type(element).__name__
+                    element_type = type(volume).__name__
                     raise TypeError('Saw volume of type {} (must be dict or str).'.format(element_type))
 
             if volumes_from:
@@ -312,7 +312,7 @@ class Node:
                 ports.append(port)
                 port_bindings[port] = None
             else:
-                element_type = type(element).__name__
+                element_type = type(port).__name__
                 raise TypeError('Saw port of type {} (must be dict or int).'.format(element_type))
 
         if ports:
@@ -386,10 +386,10 @@ class Node:
                                                                         ['NetworkSettings',
                                                                          'Ports']).items()}
         if self.host_ports:
-            logger.debug('Created host port mapping (%s) for node (%s).',
-                         '; '.join('{} => {}'.format(host_port, container_port)
-                                   for host_port, container_port in self.host_ports.items()),
-                         self.hostname)
+            logger.info('Created host port mapping (%s) for node (%s).',
+                        '; '.join('{} => {}'.format(host_port, container_port)
+                                  for host_port, container_port in self.host_ports.items()),
+                        self.hostname)
 
         self._add_node_to_etc_hosts()
 

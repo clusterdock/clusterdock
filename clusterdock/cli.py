@@ -114,8 +114,9 @@ def main():
                               help='Operating system to use for cluster nodes',
                               metavar='sys')
     start_parser.add_argument('-p', '--port',
-                              help=('Publish node port to the host. Format: nodeHostname:nodePort '
-                                    'or nodeHostname:hostPort->nodePort'),
+                              help=('Publish node port to the host. The format should be "<node name>:<node port>" '
+                                    'or "<node name>:<host port>-><node port>" (surrounding quotes are required). '
+                                    'Argument may be used more than once for multiple ports.'),
                               metavar='port',
                               action='append')
     start_parser.add_argument('-r', '--registry',
