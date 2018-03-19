@@ -2,6 +2,11 @@
 History
 =======
 
+1.6.0 (2018.03.19)
+------------------
+
+* Add --port argument functionality to clusterdock start.
+
 1.5.0 (2018.03.09)
 ------------------
 
