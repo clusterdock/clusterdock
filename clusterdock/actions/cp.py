@@ -31,14 +31,19 @@ def main(args):
         src_path = args.source.split(':')[1]
         dest_path = args.destination.split(':')[1]
 
-        tarstream = io.BytesIO(src_container.get_archive(path=src_path)[0].read())
+        tarstream = io.BytesIO()
+        for chunk in src_container.get_archive(path=src_path)[0]:
+            tarstream.write(chunk)
         tarstream.seek(0)
         dest_container.put_archive(path=dest_path, data=tarstream)
     elif ':' in args.source:
         src_container = _find_container(args.source.split(':')[0])
         src_path = args.source.split(':')[1]
 
-        tarstream = io.BytesIO(src_container.get_archive(path=src_path)[0].read())
+        tarstream = io.BytesIO()
+        for chunk in src_container.get_archive(path=src_path)[0]:
+            tarstream.write(chunk)
+        tarstream.seek(0)
         with tarfile.open(fileobj=tarstream) as tarfile_:
             tarfile_.extractall(path=args.destination)
     elif ':' in args.destination:

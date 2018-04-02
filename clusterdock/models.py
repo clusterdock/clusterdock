@@ -442,7 +442,10 @@ class Node:
         Returns:
             A :obj:`str` containing the contents of the file.
         """
-        tarstream = io.BytesIO(self.container.get_archive(path=path)[0].read())
+        tarstream = io.BytesIO()
+        for chunk in self.container.get_archive(path=path)[0]:
+            tarstream.write(chunk)
+        tarstream.seek(0)
         with tarfile.open(fileobj=tarstream) as tarfile_:
             for tarinfo in tarfile_.getmembers():
                 return tarfile_.extractfile(tarinfo).read().decode()
