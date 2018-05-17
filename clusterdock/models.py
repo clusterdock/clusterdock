@@ -19,6 +19,7 @@ import copy
 import datetime
 import io
 import logging
+import os
 import tarfile
 import time
 from collections import OrderedDict, namedtuple
@@ -27,7 +28,7 @@ from pkg_resources import get_distribution
 import docker
 import requests
 
-from .config import defaults
+from .config import CLUSTERDOCK_CONFIG_DIRECTORY, defaults
 from .exceptions import DuplicateClusterNameError, DuplicateHostnamesError
 from .utils import (get_containers, generate_cluster_name, get_clusterdock_label,
                     nested_get, wait_for_condition)
@@ -223,7 +224,8 @@ class Node:
         # Run without a seccomp profile.
         'security_opt': ['seccomp=unconfined'],
         # Mount in /etc/localtime to have container time match the host's.
-        'binds': {'/etc/localtime': {'bind': '/etc/localtime', 'mode': 'rw'}},
+        'binds': {os.path.join(CLUSTERDOCK_CONFIG_DIRECTORY,
+                               'localtime'): {'bind': '/etc/localtime', 'mode': 'rw'}},
     }
 
     DEFAULT_CREATE_CONTAINER_KWARGS = {

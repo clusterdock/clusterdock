@@ -22,7 +22,7 @@ from dateutil.relativedelta import relativedelta
 import yaml
 
 import clusterdock.models as models
-from .config import defaults
+from .config import CLUSTERDOCK_CONFIG_DIRECTORY, defaults
 
 FORMATTER_CLASS = argparse.ArgumentDefaultsHelpFormatter
 
@@ -179,6 +179,14 @@ def main():
     _add_help(ps_parser)
 
     if hasattr(args, 'topology'):
+        # As a workaround for https://github.com/docker/for-mac/issues/2396, we write the /etc/localtime
+        # into the clusterdock config directory, which can be mounted into containers.
+        if not os.path.exists(CLUSTERDOCK_CONFIG_DIRECTORY):
+            os.makedirs(CLUSTERDOCK_CONFIG_DIRECTORY)
+        with open('/etc/localtime', 'rb') as etc_localtime:
+            with open(os.path.join(CLUSTERDOCK_CONFIG_DIRECTORY, 'localtime'), 'wb') as clusterdock_localtime:
+                clusterdock_localtime.write(etc_localtime.read())
+
         topology = os.path.basename(os.path.realpath(args.topology))
 
         topology_definition_filename = defaults.get('DEFAULT_TOPOLOGY_DEFINITION_FILENAME')

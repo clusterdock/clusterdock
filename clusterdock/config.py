@@ -20,6 +20,8 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+CLUSTERDOCK_CONFIG_DIRECTORY = os.path.expanduser('~/.clusterdock')
+
 with open(os.path.join(os.path.dirname(__file__),
                        'defaults.yaml')) as defaults_file:
     logger.debug('Reading defaults.yaml configuration file ...')
