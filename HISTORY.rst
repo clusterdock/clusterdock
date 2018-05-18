@@ -2,6 +2,11 @@
 History
 =======
 
+2.0.1 (2018.05.18)
+------------------
+
+* Workaround for /etc/localtime mount failing on Mac.
+
 2.0.0 (2018.04.02)
 ------------------
 
