@@ -263,6 +263,11 @@ class Node:
         create_container_kwargs = copy.deepcopy(dict(Node.DEFAULT_CREATE_CONTAINER_KWARGS,
                                                 **self.create_container_kwargs))
 
+        clusterdock_container_labels = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'):
+                                        get_clusterdock_label(cluster_name)}
+
+        create_container_kwargs['labels'] = clusterdock_container_labels
+
         if self.volumes:
             # Instantiate empty lists to which we'll append elements as we traverse through
             # volumes. These populated lists will then get passed to either
@@ -284,11 +289,13 @@ class Node:
                 elif isinstance(volume, str):
                     # Strings in the volume list are `volumes_from` images.
                     try:
-                        container = client.containers.create(volume)
+                        container = client.containers.create(volume,
+                                                             labels=clusterdock_container_labels)
                     except docker.errors.ImageNotFound:
                         logger.info('Could not find %s locally. Attempting to pull ...', volume)
                         client.images.pull(volume)
-                        container = client.containers.create(volume)
+                        container = client.containers.create(volume,
+                                                             labels=clusterdock_container_labels)
                     volumes_from.append(container.id)
                 else:
                     element_type = type(volume).__name__
@@ -332,9 +339,6 @@ class Node:
         networking_config = client.api.create_networking_config({
             network: client.api.create_endpoint_config(aliases=[self.hostname])
         })
-
-        create_container_kwargs['labels'] = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'):
-                                             get_clusterdock_label(cluster_name)}
 
         logger.info('Starting node %s ...', self.fqdn)
         # Since we need to use the low-level API to handle networking properly, we need to get
