@@ -2,6 +2,11 @@
 History
 =======
 
+2.0.3 (2018.05.29)
+------------------
+
+* Add SSH daemon check to :py:meth:`clusterdock.models.Node.start`.
+
 2.0.2 (2018.05.22)
 ------------------
 
