@@ -397,6 +397,20 @@ class Node:
                                   for host_port, container_port in self.host_ports.items()),
                         self.hostname)
 
+        # Wait for container's SSH daemon to come online.
+        def condition(node):
+            sshd_status = node.execute('service sshd status', quiet=True).exit_code
+            logger.debug('service sshd status returned %s.', sshd_status)
+            return sshd_status == 0
+        def success(time):
+            logger.debug('SSH daemon came up after %s seconds.', time)
+        def failure(timeout):
+            logger.debug('Timed out after %s seconds waiting for SSH daemon to start.',
+                         timeout)
+        timeout_in_secs = 30
+        wait_for_condition(condition=condition, condition_args=[self],
+                           timeout=30, success=success, failure=failure)
+
         self._add_node_to_etc_hosts()
 
     def stop(self, remove=True):
