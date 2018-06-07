@@ -19,7 +19,7 @@ import colorlog
 
 __author__ = """Dima Spivak"""
 __email__ = 'dima@spivak.ch'
-__version__ = '2.0.3'
+__version__ = '2.0.4'
 
 formatter = colorlog.ColoredFormatter(
     (
