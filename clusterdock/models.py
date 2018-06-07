@@ -36,7 +36,7 @@ from .utils import (get_containers, generate_cluster_name, get_clusterdock_label
 logger = logging.getLogger(__name__)
 
 clusterdock_args = None
-client = docker.from_env()
+client = docker.from_env(timeout=300)
 
 DEFAULT_NETWORK_TYPE = 'bridge'
 
