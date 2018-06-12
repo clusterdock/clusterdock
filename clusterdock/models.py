@@ -117,13 +117,8 @@ class Cluster:
                 raise DuplicateHostnamesError(duplicates=duplicate_hostnames,
                                               network=self.network)
 
-        if clusterdock_args and clusterdock_args.clusterdock_config_directory:
-            self.clusterdock_config_host_dir = os.path.expanduser(clusterdock_args.clusterdock_config_directory)
-        else:
-            self.clusterdock_config_host_dir = os.path.expanduser(defaults.get('DEFAULT_CLUSTERDOCK_CONFIG_DIRECTORY'))
         for node in self:
-            node.start(self.network, cluster_name=self.name,
-                       clusterdock_config_directory=self.clusterdock_config_host_dir)
+            node.start(self.network, cluster_name=self.name)
 
     def execute(self, command, **kwargs):
         """Execute a command on every :py:class:`clusterdock.models.Node` within the
@@ -247,10 +242,16 @@ class Node:
         self.volumes = volumes or []
         self.devices = devices or []
         self.create_container_kwargs = create_container_kwargs
+        if clusterdock_args and clusterdock_args.clusterdock_config_directory:
+            dir_path = clusterdock_args.clusterdock_config_directory
+        else:
+            dir_path = defaults.get('DEFAULT_CLUSTERDOCK_CONFIG_DIRECTORY')
+        self.clusterdock_config_host_dir = os.path.realpath(os.path.expanduser(dir_path))
+        logger.info('self.clusterdock_config_host_dir = %s', self.clusterdock_config_host_dir)
 
         self.execute_shell = '/bin/sh'
 
-    def start(self, network, clusterdock_config_directory, cluster_name=None):
+    def start(self, network, cluster_name=None):
         """Start the node.
 
         Args:
@@ -263,7 +264,7 @@ class Node:
         # and the node's container itself.
         create_host_config_kwargs = copy.deepcopy(Node.DEFAULT_CREATE_HOST_CONFIG_KWARGS)
         # Mount in /etc/localtime to have container time match the host's.
-        create_host_config_kwargs['binds'] = {os.path.join(clusterdock_config_directory, 'localtime'):
+        create_host_config_kwargs['binds'] = {os.path.join(self.clusterdock_config_host_dir, 'localtime'):
                                               {'bind': '/etc/localtime', 'mode': 'rw'}}
         create_container_kwargs = copy.deepcopy(dict(Node.DEFAULT_CREATE_CONTAINER_KWARGS,
                                                 **self.create_container_kwargs))
