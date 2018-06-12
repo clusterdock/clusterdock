@@ -140,7 +140,11 @@ def main():
     # We can now add a -h/--help argument to the top-level parser without affecting the ability to
     # get help once a topology is selected.
     _add_help(parser)
-    _handle_etc_localtime(args.clusterdock_config_directory)
+    clusterdock_config_directory_path = os.path.realpath(os.path.expanduser(args.clusterdock_config_directory))
+    logger.info('clusterdock_config_directory_path = %s', clusterdock_config_directory_path)
+    if not os.path.exists(clusterdock_config_directory_path):
+        os.makedirs(clusterdock_config_directory_path)
+    _handle_etc_localtime(clusterdock_config_directory_path)
 
     # Manage parser
     # ~~~~~~~~~~~~~
@@ -270,13 +274,9 @@ def _add_help(parser):
                         help='show this help message and exit')
 
 
-def _handle_etc_localtime(clusterdock_config_directory):
+def _handle_etc_localtime(clusterdock_config_directory_path):
     # As a workaround for https://github.com/docker/for-mac/issues/2396, we write the /etc/localtime
     # into the clusterdock config directory, which can be mounted into containers.
-    clusterdock_config_directory_path = os.path.realpath(os.path.expanduser(clusterdock_config_directory))
-    logger.info('clusterdock_config_directory_path = %s', clusterdock_config_directory_path)
-    if not os.path.exists(clusterdock_config_directory_path):
-        os.makedirs(clusterdock_config_directory_path)
     with open('/etc/localtime', 'rb') as etc_localtime:
         with open(os.path.join(clusterdock_config_directory_path, 'localtime'), 'wb') as clusterdock_localtime:
             clusterdock_localtime.write(etc_localtime.read())
