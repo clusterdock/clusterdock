@@ -2,6 +2,11 @@
 History
 =======
 
+2.1.0 (2018.06.18)
+------------------
+
+* Add argument for clusterdock-config-directory.
+
 2.0.4 (2018.06.07)
 ------------------
 
