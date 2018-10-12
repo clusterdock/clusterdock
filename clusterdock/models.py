@@ -16,17 +16,14 @@ to bring up clusters.
 """
 
 import copy
-import datetime
 import io
 import logging
 import os
 import tarfile
 import time
 from collections import OrderedDict, namedtuple
-from pkg_resources import get_distribution
 
 import docker
-import requests
 
 from .config import defaults
 from .exceptions import DuplicateClusterNameError, DuplicateHostnamesError
@@ -118,7 +115,7 @@ class Cluster:
                                               network=self.network)
 
         for node in self:
-            node.start(self.network, cluster_name=self.name)
+            node.start(self.network, cluster_name=self.name, pull_images=pull_images)
 
     def execute(self, command, **kwargs):
         """Execute a command on every :py:class:`clusterdock.models.Node` within the
@@ -251,12 +248,15 @@ class Node:
 
         self.execute_shell = '/bin/sh'
 
-    def start(self, network, cluster_name=None):
+    def start(self, network, cluster_name=None, pull_images=False):
         """Start the node.
 
         Args:
             network (:obj:`str`): Docker network to which to attach the container.
             cluster_name (:obj:`str`, optional): Cluster name to use for the Node. Default: ``None``
+            pull_images (:obj:`bool`, optional): Pull every Docker image needed by this node instance,
+                even if it exists locally.
+                Default: ``False``
         """
         self.fqdn = '{}.{}'.format(self.hostname, network)
 
@@ -294,14 +294,23 @@ class Node:
                         volumes.append(container_directory)
                 elif isinstance(volume, str):
                     # Strings in the volume list are `volumes_from` images.
-                    try:
-                        container = client.containers.create(volume,
-                                                             labels=clusterdock_container_labels)
-                    except docker.errors.ImageNotFound:
-                        logger.info('Could not find %s locally. Attempting to pull ...', volume)
+                    if pull_images:
+                        logger.info('Node started with pull_images=True. '
+                                    'Attempting to pull image (%s) ...', volume)
                         client.images.pull(volume)
-                        container = client.containers.create(volume,
-                                                             labels=clusterdock_container_labels)
+                    else:
+                        # Check for whether the image we need is present by trying to inspect it. If any
+                        # NotFound exception is raised, make sure it's because the image is missing and then
+                        # pull it before trying again.
+                        try:
+                            client.api.inspect_image(volume)
+                        except docker.errors.NotFound as not_found:
+                            if (not_found.response.status_code == 404 and
+                                    'No such image' in not_found.explanation.decode()):
+                                logger.info('Could not find %s locally. Attempting to pull ...', volume)
+                                client.images.pull(volume)
+
+                    container = client.containers.create(volume, labels=clusterdock_container_labels)
                     volumes_from.append(container.id)
                 else:
                     element_type = type(volume).__name__
@@ -347,22 +356,29 @@ class Node:
         })
 
         logger.info('Starting node %s ...', self.fqdn)
+        if pull_images:
+            logger.info('Node started with pull_images=True. '
+                        'Attempting to pull image (%s) ...', self.image)
+            client.images.pull(self.image)
+        else:
+            # Check for whether the image we need is present by trying to inspect it. If any
+            # NotFound exception is raised, make sure it's because the image is missing and then
+            # pull it before trying again.
+            try:
+                client.api.inspect_image(self.image)
+            except docker.errors.NotFound as not_found:
+                if (not_found.response.status_code == 404 and
+                        'No such image' in not_found.explanation.decode()):
+                    logger.info('Could not find %s locally. Attempting to pull ...', self.image)
+                    client.images.pull(self.image)
+
         # Since we need to use the low-level API to handle networking properly, we need to get
         # a container instance from the ID
-        try:
-            container_id = client.api.create_container(image=self.image,
-                                                       hostname=self.fqdn,
-                                                       host_config=host_config,
-                                                       networking_config=networking_config,
-                                                       **create_container_kwargs)['Id']
-        except docker.errors.ImageNotFound:
-            logger.info('Could not find %s locally. Attempting to pull ...', self.image)
-            client.images.pull(self.image)
-            container_id = client.api.create_container(image=self.image,
-                                                       hostname=self.fqdn,
-                                                       host_config=host_config,
-                                                       networking_config=networking_config,
-                                                       **create_container_kwargs)['Id']
+        container_id = client.api.create_container(image=self.image,
+                                                   hostname=self.fqdn,
+                                                   host_config=host_config,
+                                                   networking_config=networking_config,
+                                                   **create_container_kwargs)['Id']
         client.api.start(container=container_id)
 
         # When the Container instance is created, the corresponding Docker container may not
@@ -413,7 +429,6 @@ class Node:
         def failure(timeout):
             logger.debug('Timed out after %s seconds waiting for SSH daemon to start.',
                          timeout)
-        timeout_in_secs = 30
         wait_for_condition(condition=condition, condition_args=[self],
                            timeout=30, success=success, failure=failure)
 
