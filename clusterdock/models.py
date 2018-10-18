@@ -306,7 +306,7 @@ class Node:
                             client.api.inspect_image(volume)
                         except docker.errors.NotFound as not_found:
                             if (not_found.response.status_code == 404 and
-                                    'No such image' in not_found.explanation.decode()):
+                                    'No such image' in not_found.explanation):
                                 logger.info('Could not find %s locally. Attempting to pull ...', volume)
                                 client.images.pull(volume)
 
@@ -368,7 +368,7 @@ class Node:
                 client.api.inspect_image(self.image)
             except docker.errors.NotFound as not_found:
                 if (not_found.response.status_code == 404 and
-                        'No such image' in not_found.explanation.decode()):
+                        'No such image' in not_found.explanation):
                     logger.info('Could not find %s locally. Attempting to pull ...', self.image)
                     client.images.pull(self.image)
 
