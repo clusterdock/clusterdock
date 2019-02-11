@@ -36,6 +36,8 @@ clusterdock_args = None
 client = docker.from_env(timeout=300)
 
 DEFAULT_NETWORK_TYPE = 'bridge'
+LOCALTIME_MOUNT = True # Sync host time to Docker container by /etc/localtime
+PRIVILEGED_CONTAINER = False # Give extended privileges to the container.
 
 
 class Cluster:
@@ -225,8 +227,7 @@ class Node:
     DEFAULT_CREATE_CONTAINER_KWARGS = {
         # All nodes run in detached mode.
         'detach': True,
-        # Mount in /etc/localtime to have container time match the host's.
-        'volumes': ['/etc/localtime']
+        'volumes': []
     }
 
     def __init__(self, hostname, group, image, ports=None, volumes=None, devices=None,
@@ -263,11 +264,17 @@ class Node:
         # Instantiate dictionaries for kwargs we'll pass when creating host configs
         # and the node's container itself.
         create_host_config_kwargs = copy.deepcopy(Node.DEFAULT_CREATE_HOST_CONFIG_KWARGS)
-        # Mount in /etc/localtime to have container time match the host's.
-        create_host_config_kwargs['binds'] = {os.path.join(self.clusterdock_config_host_dir, 'localtime'):
-                                              {'bind': '/etc/localtime', 'mode': 'rw'}}
         create_container_kwargs = copy.deepcopy(dict(Node.DEFAULT_CREATE_CONTAINER_KWARGS,
                                                 **self.create_container_kwargs))
+
+        create_host_config_kwargs['privileged'] = PRIVILEGED_CONTAINER
+        if LOCALTIME_MOUNT:
+            # Mount in /etc/localtime to have container time match the host's.
+            create_host_config_kwargs['binds'] = {os.path.join(self.clusterdock_config_host_dir, 'localtime'):
+                                                  {'bind': '/etc/localtime', 'mode': 'rw'}}
+            create_container_kwargs['volumes'].append('/etc/localtime')
+        else:
+            create_container_kwargs['environment'] = {'TZ': os.readlink('/etc/localtime').split('zoneinfo/')[1]}
 
         clusterdock_container_labels = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'):
                                         get_clusterdock_label(cluster_name)}
@@ -285,7 +292,10 @@ class Node:
             volumes_from = []
 
             for volume in self.volumes:
-                if isinstance(volume, dict):
+                if isinstance(volume, list):
+                    # List in the volumes list are Docker volumes to create.
+                    volumes.extend(volume)
+                elif isinstance(volume, dict):
                     # Dictionaries in the volumes list are bind volumes.
                     for host_directory, container_directory in volume.items():
                         logger.debug('Adding volume (%s) to container config ...',
