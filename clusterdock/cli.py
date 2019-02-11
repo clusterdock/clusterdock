@@ -61,6 +61,9 @@ def main():
     build_parser = action_subparsers.add_parser('build',
                                                 formatter_class=FORMATTER_CLASS,
                                                 add_help=False)
+    build_parser.add_argument('-c', '--cluster-name',
+                              help='Cluster name to use',
+                              metavar='name')
     build_parser.add_argument('-n', '--network',
                               help='Docker network to use',
                               default=defaults['DEFAULT_NETWORK'],
@@ -68,11 +71,16 @@ def main():
     build_parser.add_argument('-o', '--operating-system',
                               help='Operating system to use for cluster nodes',
                               metavar='sys')
+    build_parser.add_argument('-p', '--port',
+                              help=('Publish node port to the host. The format should be "<node name>:<node port>" '
+                                    'or "<node name>:<host port>-><node port>" (surrounding quotes are required). '
+                                    'Argument may be used more than once for multiple ports.'),
+                              metavar='port',
+                              action='append')
     build_parser.add_argument('-r', '--repository',
                               help='Docker repository to use for committing images',
                               default=defaults['DEFAULT_REPOSITORY'],
                               metavar='url')
-
     build_parser.add_argument('topology',
                               help='A clusterdock topology directory')
 
