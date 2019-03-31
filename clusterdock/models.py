@@ -230,7 +230,7 @@ class Node:
         'volumes': []
     }
 
-    def __init__(self, hostname, group, image, ports=None, volumes=None, devices=None,
+    def __init__(self, hostname, group, image, ports=None, volumes=None, devices=None, environment=None,
                  **create_container_kwargs):
         self.hostname = hostname
         self.group = group
@@ -239,6 +239,7 @@ class Node:
         self.ports = ports or []
         self.volumes = volumes or []
         self.devices = devices or []
+        self.environment = environment or {}
         self.create_container_kwargs = create_container_kwargs
         if clusterdock_args and clusterdock_args.clusterdock_config_directory:
             dir_path = clusterdock_args.clusterdock_config_directory
@@ -274,7 +275,7 @@ class Node:
                                                   {'bind': '/etc/localtime', 'mode': 'rw'}}
             create_container_kwargs['volumes'].append('/etc/localtime')
         else:
-            create_container_kwargs['environment'] = {'TZ': os.readlink('/etc/localtime').split('zoneinfo/')[1]}
+            self.environment['TZ'] = os.readlink('/etc/localtime').split('zoneinfo/')[1]
 
         clusterdock_container_labels = {defaults.get('DEFAULT_DOCKER_LABEL_KEY'):
                                         get_clusterdock_label(cluster_name)}
@@ -348,6 +349,9 @@ class Node:
             else:
                 element_type = type(port).__name__
                 raise TypeError('Saw port of type {} (must be dict or int).'.format(element_type))
+
+        if self.environment:
+            create_container_kwargs['environment']= self.environment
 
         if ports:
             create_container_kwargs['ports'] = ports
