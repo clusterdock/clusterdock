@@ -23,4 +23,4 @@ logger = logging.getLogger(__name__)
 with open(os.path.join(os.path.dirname(__file__),
                        'defaults.yaml')) as defaults_file:
     logger.debug('Reading defaults.yaml configuration file ...')
-    defaults = yaml.load(defaults_file.read())
+    defaults = yaml.load(defaults_file.read(), Loader=yaml.FullLoader)

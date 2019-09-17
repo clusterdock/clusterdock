@@ -12,6 +12,5 @@
 
 colorlog
 docker==2.4.2
-PyYAML==3.12
+PyYAML
 pytest==3.1.2
-requests==2.18.2

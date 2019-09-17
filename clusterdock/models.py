@@ -246,7 +246,7 @@ class Node:
         else:
             dir_path = defaults.get('DEFAULT_CLUSTERDOCK_CONFIG_DIRECTORY')
         self.clusterdock_config_host_dir = os.path.realpath(os.path.expanduser(dir_path))
-        logger.info('self.clusterdock_config_host_dir = %s', self.clusterdock_config_host_dir)
+        logger.debug('self.clusterdock_config_host_dir = %s', self.clusterdock_config_host_dir)
 
         self.execute_shell = '/bin/sh'
 

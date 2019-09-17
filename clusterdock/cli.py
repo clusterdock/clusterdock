@@ -149,7 +149,7 @@ def main():
     # get help once a topology is selected.
     _add_help(parser)
     clusterdock_config_directory_path = os.path.realpath(os.path.expanduser(args.clusterdock_config_directory))
-    logger.info('clusterdock_config_directory_path = %s', clusterdock_config_directory_path)
+    logger.debug('clusterdock_config_directory_path = %s', clusterdock_config_directory_path)
     if not os.path.exists(clusterdock_config_directory_path):
         os.makedirs(clusterdock_config_directory_path)
     _handle_etc_localtime(clusterdock_config_directory_path)
@@ -201,7 +201,7 @@ def main():
         topology_definition_filename = defaults.get('DEFAULT_TOPOLOGY_DEFINITION_FILENAME')
         with open(os.path.realpath(os.path.join(args.topology,
                                                 topology_definition_filename))) as topology_file:
-            topology_configs = yaml.load(topology_file.read())
+            topology_configs = yaml.load(topology_file.read(), Loader=yaml.FullLoader)
             topology_name = topology_configs.get('name')
 
         # Build parser
