@@ -2,6 +2,13 @@
 History
 =======
 
+2.2.0 (2019.09.16)
+------------------
+
+* Clean up console output.
+* Add support for specifying env vars in :py:class:`clusterdock.models.Node`.
+* Improved support for CentOS 7.
+
 2.1.0 (2018.06.18)
 ------------------
 
