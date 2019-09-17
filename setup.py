@@ -27,7 +27,6 @@ requirements = [
     'docker',
     'PyYAML',
     'python-dateutil',
-    'requests'
 ]
 
 setup_requirements = [

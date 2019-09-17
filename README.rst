@@ -15,14 +15,14 @@ clusterdock
 .. image:: https://img.shields.io/pypi/pyversions/clusterdock.svg
     :target: https://pypi.python.org/pypi/clusterdock
 
--------------------
+------------------
 
 **clusterdock** is a Python 3 project that enables users to build,
 start, and manage Docker container-based clusters. It uses a pluggable
 system for defining new types of clusters using folders called *topologies* and
 is a swell project, if I may say so myself.
 
--------------------
+------------------
 
 "I hate reading, make this quick."
 ==================================
