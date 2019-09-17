@@ -44,6 +44,7 @@ setup(
     version='2.2.0',
     description="clusterdock is a framework for creating Docker-based container clusters",
     long_description=readme + '\n\n' + history,
+    long_description_content_type='text/markdown',
     author="Dima Spivak",
     author_email='dima@spivak.ch',
     url='https://github.com/clusterdock/clusterdock',
