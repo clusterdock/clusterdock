@@ -510,18 +510,18 @@ class Node:
 
         Args:
             path (:obj:`str`): Absolute path to file.
-            contents (:obj:`str`): The contents of the file.
+            contents: The contents of the file in :obj:`str` or :obj:`bytes` form.
         """
         data = io.BytesIO()
         with tarfile.open(fileobj=data, mode='w') as tarfile_:
-            encoded_file = contents.encode()
+            file_contents = contents.encode() if isinstance(contents, str) else contents
             tarinfo = tarfile.TarInfo(path)
 
             # We set the modification time to now because some systems (e.g. logging) rely upon
             # timestamps to determine whether to read config files.
             tarinfo.mtime = time.time()
-            tarinfo.size = len(encoded_file)
-            tarfile_.addfile(tarinfo, io.BytesIO(encoded_file))
+            tarinfo.size = len(file_contents)
+            tarfile_.addfile(tarinfo, io.BytesIO(file_contents))
         data.seek(0)
 
         self.container.put_archive(path='/', data=data)
