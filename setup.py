@@ -24,7 +24,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'colorlog',
-    'docker',
+    'docker==4.2.2',
     'PyYAML',
     'python-dateutil',
 ]

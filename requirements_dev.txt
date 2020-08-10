@@ -13,7 +13,7 @@
 bumpversion==0.5.3
 coverage==4.1
 cryptography==1.7
-docker==2.4.2
+docker==4.2.2
 flake8==2.6.0
 PyYAML
 pip==8.1.2

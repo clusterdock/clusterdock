@@ -11,6 +11,6 @@
 # limitations under the License.
 
 colorlog
-docker==2.4.2
+docker==4.2.2
 PyYAML
 pytest==3.1.2
