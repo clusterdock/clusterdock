@@ -2,6 +2,12 @@
 History
 =======
 
+2.3.0 (2020.08.10)
+------------------
+
+* Ability to upload character or byte content file to Nodes
+* Pin docker-py version to 4.2.2
+
 2.2.0 (2019.09.16)
 ------------------
 
