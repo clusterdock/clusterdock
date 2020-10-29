@@ -13,6 +13,7 @@
 
 import json
 import logging
+import sys
 
 import docker
 
@@ -55,7 +56,9 @@ def _nuke_containers_and_networks(cluster_containers, dry_run,
         logger.debug('Removing container %s (id: %s, cluster: %s) ...',
                      container_hostname, container.short_id, cluster_name)
         if not dry_run:
-            _remove_node_from_etc_hosts(container_hostname)
+            # /etc/hosts is only edited on non-Mac platforms.
+            if sys.platform != 'darwin':
+                _remove_node_from_etc_hosts(container_hostname)
             container.remove(v=True, force=True)
             removed_containers.append(container_hostname)
 

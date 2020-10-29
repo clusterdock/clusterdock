@@ -19,6 +19,7 @@ import copy
 import io
 import logging
 import os
+import sys
 import tarfile
 import time
 from collections import OrderedDict, namedtuple
@@ -446,7 +447,9 @@ class Node:
         wait_for_condition(condition=condition, condition_args=[self],
                            timeout=30, success=success, failure=failure)
 
-        self._add_node_to_etc_hosts()
+        # Add Docker container info to /etc/hosts on non-Mac instances to enable SOCKS5 proxy usage.
+        if sys.platform != 'darwin':
+            self._add_node_to_etc_hosts()
 
     def stop(self, remove=True):
         """Stop the node and optionally removing the Docker container.
