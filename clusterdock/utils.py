@@ -18,7 +18,7 @@ import logging
 import operator
 import os
 import random
-import socket
+import re
 import subprocess
 from collections import namedtuple
 from functools import reduce
@@ -56,6 +56,8 @@ def nested_get(dict_, keys):
 # The `#:` constructs at the end of assignments are part of Sphinx's autodoc functionality.
 DEFAULT_TIME_BETWEEN_CHECKS = 1  #:
 DEFAULT_TIMEOUT = 60  #:
+
+
 def wait_for_condition(condition, condition_args=None, condition_kwargs=None,
                        time_between_checks=DEFAULT_TIME_BETWEEN_CHECKS, timeout=DEFAULT_TIMEOUT,
                        time_to_success=0, success=None, failure=None):
@@ -251,3 +253,92 @@ def get_container(hostname):
     for container in client.containers.list():
         if nested_get(container.attrs, ['Config', 'Hostname']) == hostname:
             return container
+
+
+class VersionSplit:
+    """Util function to hold various parts of a version.
+
+      Args:
+          name (:obj:`str`)
+          delimiter1 (:obj:`str`)
+          version (:obj:`str`)
+          delimiter2 (:obj:`str`)
+          specifier (:obj:`str`)
+    """
+    __slots__ = ['name', 'delimiter1', 'version', 'delimiter2', 'specifier']
+
+    def __init__(self, name, delimiter1, version, delimiter2, specifier):
+        self.name = name
+        self.delimiter1 = delimiter1
+        self.version = version
+        self.delimiter2 = delimiter2
+        self.specifier = specifier
+
+    def __iter__(self):
+        for attr in self.__slots__:
+            yield getattr(self, attr)
+
+
+class Version:
+    """Maven version string abstraction.
+
+    Use this class to enable correct comparison of Maven versioned projects. For our purposes,
+    any version is equivalent to any other version that has the same 4-digit version number (i.e.
+    3.0.0.0-SNAPSHOT == 3.0.0.0-RC2 == 3.0.0.0).
+
+    Args:
+        version (:obj:`str`) or (:obj:`int`) or (:obj:`float`): Version string (e.g. '2.5.0.0-SNAPSHOT').
+    """
+    # pylint: disable=protected-access,too-few-public-methods
+    def __init__(self, version):
+        self._pattern = '(^[a-zA-Z]+)?(-)?([\d.]+)(-)?(\w+)?'
+        # name (^[a-zA-Z]+) May or may not exist
+        # delimiter1 (-)? May or may not exist e.g. - or None
+        # version ([\d.]+) Version number e.g. 3.8.2
+        # delimiter2 (-)? May or may not exist e.g. - or None
+        # specifier (\w*) May or may not exist e.g. RC2
+
+        # Handle the case where version is int or float.
+        if isinstance(version, (int, float)):
+            version = str(version)
+
+        self._str = version
+
+        groups = re.search(self._pattern, self._str).groups()
+        version_split = VersionSplit(*groups)
+
+        # Parse the numeric part of versions.
+        numeric_version_list = [int(i) for i in version_split.version.split('.')]
+
+        # Add additional 0's to keep a min length of version. Not so pythonic but, probably is more readable and simple.
+        while len(numeric_version_list) < 4:
+            numeric_version_list.append(0)
+
+        # Update version_split with appended zeros.
+        version_split.version = numeric_version_list
+
+        self._version_split = version_split
+        self._tuple = tuple(version_split)
+
+    def __repr__(self):
+        return str(self._tuple)
+
+    def __eq__(self, other):
+        return (self._version_split.name == other._version_split.name and
+                self._version_split.version == other._version_split.version)
+
+    def __lt__(self, other):
+        if not isinstance(other, Version):
+            raise TypeError('Comparison can only be done for two Version instances.')
+        if self._version_split.name != other._version_split.name:
+            raise TypeError('Comparison can only be done between two Version instances with same name.')
+        return self._version_split.version < other._version_split.version
+
+    def __gt__(self, other):
+        return other.__lt__(self)
+
+    def __ge__(self, other):
+        return self.__gt__(other) or self.__eq__(other)
+
+    def __le__(self, other):
+        return other.__ge__(self)
