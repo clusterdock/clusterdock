@@ -483,14 +483,26 @@ class Node:
         exec_id = client.api.exec_create(self.container.id, exec_command, user=user)['Id']
 
         output = []
-        for response_chunk in client.api.exec_start(exec_id, stream=True, detach=detach):
-            output_chunk = response_chunk.decode()
-            output.append(output_chunk)
+        stdout = []
+        stderr = []
+        for response_chunk in client.api.exec_start(exec_id, stream=True, demux=True, detach=detach):
             if not quiet:
-                print(output_chunk)
+                logger.debug('Got response link: %s', response_chunk)
+            # Handle stdout
+            if response_chunk[0]:
+                stdout_ = response_chunk[0].decode()
+                output.append(stdout_)
+                stdout.append(stdout_)
+            # Hande stderr
+            if response_chunk[1]:
+                stderr_ = response_chunk[1].decode()
+                output.append(stderr_)
+                stderr.append(stderr_)
         exit_code = client.api.exec_inspect(exec_id).get('ExitCode')
-        return namedtuple('ExecuteSession', ['exit_code', 'output'])(exit_code=exit_code,
-                                                                     output=''.join(output))
+        return namedtuple('ExecuteSession', ['exit_code', 'output', 'stdout', 'stderr'])(exit_code=exit_code,
+                                                                                         output=''.join(output),
+                                                                                         stdout=''.join(stdout),
+                                                                                         stderr=''.join(stderr))
 
     def get_file(self, path):
         """Get file from the node.
