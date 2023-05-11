@@ -23,6 +23,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
+    'urllib3==1.26.15',
     'colorlog',
     'docker==4.2.2',
     'PyYAML',
