@@ -17,6 +17,7 @@ to bring up clusters.
 
 import copy
 import io
+import json
 import logging
 import os
 import sys
@@ -29,7 +30,7 @@ import docker
 from .config import defaults
 from .exceptions import DuplicateClusterNameError, DuplicateHostnamesError
 from .utils import (get_containers, generate_cluster_name, get_clusterdock_label,
-                    nested_get, wait_for_condition)
+                    nested_get, wait_for_condition, in_docker_container)
 
 logger = logging.getLogger(__name__)
 
@@ -449,7 +450,7 @@ class Node:
                                timeout=30, success=success, failure=failure)
 
         # Add Docker container info to /etc/hosts on non-Mac instances to enable SOCKS5 proxy usage.
-        if sys.platform != 'darwin':
+        if sys.platform != 'darwin' and not in_docker_container():
             self._add_node_to_etc_hosts()
 
     def stop(self, remove=True):

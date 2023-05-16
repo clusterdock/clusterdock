@@ -17,7 +17,7 @@ import sys
 
 import docker
 
-from ..utils import get_containers, nested_get
+from ..utils import get_containers, nested_get, in_docker_container
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def _nuke_containers_and_networks(cluster_containers, dry_run,
                      container_hostname, container.short_id, cluster_name)
         if not dry_run:
             # /etc/hosts is only edited on non-Mac platforms.
-            if sys.platform != 'darwin':
+            if sys.platform != 'darwin' and not in_docker_container():
                 _remove_node_from_etc_hosts(container_hostname)
             container.remove(v=True, force=True)
             removed_containers.append(container_hostname)

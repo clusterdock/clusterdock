@@ -34,6 +34,18 @@ logger = logging.getLogger(__name__)
 client = docker.from_env()
 
 
+def in_docker_container():
+    """Utility function that returns whether or not we are running in a docker container.
+
+    Returns:
+        ``True`` if we are running in a docker container, ``False`` otherwise.
+    """
+    path = '/proc/self/cgroup'
+    return (
+        os.path.exists('/.dockerenv') or
+        os.path.isfile(path) and any('docker' in line for line in open(path))
+    )
+
 def nested_get(dict_, keys):
     """Utility function that returns the value of a sequence of nested keys.
 
